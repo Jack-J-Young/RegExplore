@@ -20,6 +20,7 @@ ast = regexToAst(regex)
 parent = regexTree.toNode(ast)
 
 print(parent.getName())
+print(parent.children[0].getName())
 
 # Get density
 
