@@ -4,8 +4,19 @@ from anytree import Node, RenderTree
 def regexToAst(regex):
     return sre_parse.parse(regex)
 
-def tutpleToNode(tuple):
+def tupleToNode(tuple):
     print("test")
+    print(type(tuple[0]))
+    if (tuple[0].name == 'LITERAL'):
+        return Node(chr(tuple[1]))
+    elif (tuple[0].name == 'MAX_REPEAT'):
+        node = Node(f'{tuple[1][2]}{{{tuple[1][0]},{tuple[1][1]}}}')
+        AstToNode(tuple[1][2], node)
+        return node
+    elif (tuple[0].name == 'SUBPATTERN'):
+        print('test2')
+    
+    return Node('null')
 
 def AstToNode(ast, parent):
     nodeType = type(ast)
@@ -13,15 +24,16 @@ def AstToNode(ast, parent):
     if nodeType == list:
         print('list')
         for i in ast:
+            # This needs to be check if tuple or list...
+
             node = Node(i, parent=parent)
             # parent.children.append(node)
 
             AstToNode(i, node)
     elif nodeType == tuple:
         print('tuple')
-
-        # for i in ast:
-        #     AstToNode(i, parent)
+        node = tupleToNode(ast)
+        node.parent = parent
     else:
         print('idk')
 
