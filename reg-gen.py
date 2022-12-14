@@ -1,13 +1,13 @@
-import json
 from random import SystemRandom
 from rstr import Rstr
-from sly import Lexer, Parser
 from fileManager import saveListToFile, getFileInfoDensity
-from regexParse import regexToTree, regexToAst
+from regexParse import regexToAst
 import regexTree
 
 sampleSize = 100
-regex = r"(\d+--e*)-(-?e-)\d{2,3}--[A-Z]{1,3}-\d+"
+regex = r"\d{2,3}-[A-Z]{1,3}-\d+"
+
+buffer = r"\d+[a-z]{,10}"
 
 # Tree tests
 
@@ -22,11 +22,16 @@ parent = regexTree.toNode(ast)
 print(parent.getName())
 print(parent.children[0].getName())
 
+matchData = parent.getMatches('01-D-6542')
+
+print(matchData)
+print(matchData)
+
 # Get density
 
 rs = Rstr(SystemRandom())
 
-def genRegexStrings(size, regex):
+def genRegexStrings(size, regex):  
     output = ["output"]
     for i in range(size):
         output.append(rs.xeger(regex))
@@ -34,4 +39,4 @@ def genRegexStrings(size, regex):
 
 saveListToFile(r'./input.txt', genRegexStrings(sampleSize, regex))
 
-print(getFileInfoDensity(r'./input.txt'))
+print("Compressability: " + str(getFileInfoDensity(r'./input.txt')))
