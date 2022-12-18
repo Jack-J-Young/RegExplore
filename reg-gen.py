@@ -17,14 +17,15 @@ ast = regexToAst(regex)
 
 # tree = regexTree.regexNode(ast)
 
-parent = regexTree.toNode(ast)
+parent = regexTree.regexToNode(ast)
 
-print(parent.getName())
-print(parent.children[0].getName())
+print(regexTree.nodeToRegex(parent))
+print(regexTree.nodeToRegex(parent['value'][0]))
 
-matchData = parent.getMatches('01-D-6542')
+#matchData = parent.getMatches('01-D-6542')
 
-print(matchData)
+matchData = regexTree.getMatchData(parent, '131-D-5324')
+
 print(matchData)
 
 # Get density
