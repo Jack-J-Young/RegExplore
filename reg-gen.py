@@ -3,6 +3,7 @@ from rstr import Rstr
 from fileManager import saveListToFile, getFileInfoDensity
 from regexParse import regexToAst
 import regexTree
+import matchTransform
 
 sampleSize = 100
 regex = r"\d{2,3}-[A-Z]{1,3}-\d+"
@@ -24,9 +25,19 @@ print(regexTree.nodeToRegex(parent['value'][0]))
 
 #matchData = parent.getMatches('01-D-6542')
 
-matchData = regexTree.getMatchData(parent, '131-D-5324')
+matchTransform.transformQuantifiers([
+    '131-D-1',
+    '132-D-3'
+], [
+    '01-D-12534',
+    '98-D-32244'
+], parent, lambda acceptSet, rejectSet : (min(acceptSet), max(acceptSet)))
 
-print(matchData)
+print(regexTree.nodeToRegex(parent))
+
+# matchData = regexTree.getMatchData(parent, '131-D-5324')
+
+# print(matchData)
 
 # Get density
 

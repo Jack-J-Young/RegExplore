@@ -291,7 +291,8 @@ def getMatchData(parentNode, string, pastPos = 0):
             'endPos' : -1,
             'size' : 0,
             'string' : '',
-            'children' : []
+            'children' : [],
+            'node' : parentNode
         }]
 
         for child in parentNode['value']:
@@ -308,7 +309,8 @@ def getMatchData(parentNode, string, pastPos = 0):
                         'endPos' : i['endPos'],
                         'size' : i['endPos'] - data['startPos'] + 1,
                         'string' : '',
-                        'children' : data['children'] + [i]
+                        'children' : data['children'] + [i],
+                        'node' : parentNode
                     } for i in matchData]
             
             output = nextOutput
@@ -348,11 +350,18 @@ def getMatchData(parentNode, string, pastPos = 0):
                 'endPos' : i['endPos'],
                 'size' : i['size'],
                 'string' : i['string'],
-                'child' : i
+                'child' : i,
+                'node' : parentNode
             } for i in output]
 
     elif parentNode['type'] == NodeType.PATTERN:
-        return getUnitMatches(parentNode['value'], string, pastPos)
+        output = []
+        matches = getUnitMatches(parentNode['value'], string, pastPos)
+        if matches:
+            for i in matches:
+                i.update({'node' : parentNode})
+                output.append(i)
+            return output
     return None
 
 def getUnitMatches(pattern, string, startIndex = 0):
@@ -390,3 +399,7 @@ def getUnitMatches(pattern, string, startIndex = 0):
                 'string' : chars
             })
         return output
+
+def matchArray(stringArray, regexTree):
+    dataArray = [getMatchData(regexTree, i) for i in stringArray]
+    return dataArray
