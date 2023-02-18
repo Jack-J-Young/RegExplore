@@ -1,4 +1,4 @@
-from regexTree import getMatchData, NodeType, nodeToRegex, matchArray
+from RegExtra.RegexTree.regexTree import getMatchData, NodeType, nodeToRegex, matchArray
 
 def getNodeTypes(acceptArray, rejectArray, getMethod):
     acceptNodes = []

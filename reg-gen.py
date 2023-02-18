@@ -2,7 +2,7 @@ from random import SystemRandom
 from rstr import Rstr
 from fileManager import saveListToFile, getFileInfoDensity
 from regexParse import regexToAst
-import regexTree
+import RegExtra.RegexTree.regexTree as regexTree
 import matchTransform
 
 sampleSize = 100

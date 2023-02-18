@@ -1,5 +1,6 @@
 import sre_parse
 import re
+from RegExtra.RegexTree.PatternNode.enums import PatternType
 from solveHelpers import getOrderedPerms
 import json
 from enum import Enum
@@ -9,18 +10,6 @@ class NodeType(Enum):
     LIST = 0
     QUANT = 1
     PATTERN = 2
-
-class PatternType(Enum):
-    UNKOWN = -1
-    LITERAL = 0
-    RANGE = 1
-    CATEGORY = 2
-
-class CategoryType(Enum):
-    UNKOWN = -1
-    DIGIT = 0,
-    WORD = 0,
-
 
 def regexToNode(rawData): 
 
