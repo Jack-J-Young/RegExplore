@@ -1,6 +1,8 @@
 import sre_parse
 import re
-from RegExtra.RegexTree.PatternNode.enums import PatternType
+from RegExtra.RegexTree.PatternNode.createPatternNode import createPatternNode
+from RegExtra.RegexTree.PatternNode.enums import CategoryType, PatternType
+from RegExtra.RegexTree.QuantNode.createQuantNode import createQuantNode
 from solveHelpers import getOrderedPerms
 import json
 from enum import Enum
@@ -22,28 +24,20 @@ def regexToNode(rawData):
         if len(rawData.data) == 1:
             node = regexToNode(rawData.data[0])
         else:
-            node['type'] = NodeType.LIST
-            node['value'] = []
-
-            for subData in rawData.data:
-                node['value'].append(regexToNode(subData))
+            node = {
+                'type' : NodeType.LIST,
+                'value' : [regexToNode(subData) for subData in rawData.data]
+            }
 
     elif isinstance(rawData, tuple):
         if rawData[0] == sre_parse.MAX_REPEAT:
-            repeatData = rawData[1]
-            node['type'] = NodeType.QUANT
-            node['value'] = {
-                'lower' : repeatData[0],
-                'upper' : repeatData[1],
-                'child' : regexToNode(repeatData[2])
-            }
+            node = createQuantNode(rawData[1])
 
         elif rawData[0] == sre_parse.SUBPATTERN:
-            node['type'] = NodeType.LIST
-            node['value'] = []
-
-            for subData in rawData[1][3]:
-                node['value'].append(regexToNode(subData))
+            node = {
+                'type' : NodeType.LIST,
+                'value' : [regexToNode(subData) for subData in rawData.data]
+            }
 
         elif rawData[0] == sre_parse.LITERAL:
             node['type'] = NodeType.PATTERN
@@ -54,35 +48,7 @@ def regexToNode(rawData):
             }
 
         elif rawData[0] == sre_parse.IN:
-            node['type'] = NodeType.PATTERN
-            charData = rawData[1][0]
-            if len(rawData[1]) > 1:
-                print('ERROR CHECK THIS IN CODE')
-            if charData[0] == sre_parse.CATEGORY:
-                regex = ''
-                value = CategoryType.UNKOWN
-                if charData[1] == sre_parse.CATEGORY_DIGIT:
-                    regex = r'\d'
-                    value = CategoryType.DIGIT
-                elif charData[1] == sre_parse.CATEGORY_WORD:
-                    regex = r'\w'
-                    value = CategoryType.WORD
-                value = CategoryType.DIGIT
-                node['value'] = {
-                        'type' : PatternType.CATEGORY,
-                        'value' : value,
-                        'regex' : regex
-                    }
-            elif charData[0] == sre_parse.RANGE:
-                node['value'] = {
-                    'type' : PatternType.RANGE,
-                    'value' : (chr(charData[1][0]), chr(charData[1][1])),
-                    'regex' : f'[{chr(charData[1][0])}-{chr(charData[1][1])}]'
-                }
-            else:
-                node['type'] = NodeType.UNKOWN
-                node['value'] = None
-                return node
+            node = createPatternNode(rawData[1])
 
         else:
             node['type'] = NodeType.UNKOWN
