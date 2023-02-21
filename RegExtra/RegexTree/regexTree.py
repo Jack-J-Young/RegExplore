@@ -3,15 +3,9 @@ import re
 from RegExtra.RegexTree.PatternNode.createPatternNode import createPatternNode
 from RegExtra.RegexTree.PatternNode.enums import CategoryType, PatternType
 from RegExtra.RegexTree.QuantNode.createQuantNode import createQuantNode
+from RegExtra.RegexTree.nodeEnums import NodeType
 from solveHelpers import getOrderedPerms
 import json
-from enum import Enum
-
-class NodeType(Enum):
-    UNKOWN = -1
-    LIST = 0
-    QUANT = 1
-    PATTERN = 2
 
 def regexToNode(rawData): 
 
@@ -31,7 +25,7 @@ def regexToNode(rawData):
 
     elif isinstance(rawData, tuple):
         if rawData[0] == sre_parse.MAX_REPEAT:
-            node = createQuantNode(rawData[1])
+            node = createQuantNode(rawData[1], regexToNode(rawData[1][2]))
 
         elif rawData[0] == sre_parse.SUBPATTERN:
             node = {

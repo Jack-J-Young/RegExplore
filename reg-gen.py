@@ -1,20 +1,19 @@
 from random import SystemRandom
 from rstr import Rstr
 from fileManager import saveListToFile, getFileInfoDensity
-from regexParse import regexToAst
+from regexParse import regexToAst       
 import RegExtra.RegexTree.regexTree as regexTree
 import matchTransform
 
 sampleSize = 100
-regex = r"\d{2,3}-[A-Z]{1,3}-\d+"
+regex = r"\d{1,9}-[A-Z]{1,3}-\d+"
+#regex = r"\d{1,9}-\w{1,3}ⳤ-\d+"
 
 buffer = r"\d+[a-z]{,10}"
 
 # Tree tests
 
 ast = regexToAst(regex)
-
-
 
 # tree = regexTree.regexNode(ast)
 
@@ -27,7 +26,11 @@ print(regexTree.nodeToRegex(parent['value'][0]))
 
 matchTransform.transformQuantifiers([
     '131-D-1',
-    '132-D-3'
+    '13-Dð-3',
+    '131-D-1',
+    '1323-D-3',
+    '1313-D-1',
+    '13-D-3',
 ], [
     '01-D-12534',
     '98-D-32244'

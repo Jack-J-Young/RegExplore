@@ -1,11 +1,11 @@
-from RegExtra.RegexTree.regexTree import NodeType
+from RegExtra.RegexTree.nodeEnums import NodeType
 
-def createQuantNode(rawData):
+def createQuantNode(rawData, child):
     return {
         'type' : NodeType.QUANT,
         'value' : {
-            'lower' : rawData[1][0],
-            'upper' : rawData[1][1],
-            'child' : rawData[1](rawData[1][2])
+            'lower' : rawData[0],
+            'upper' : rawData[1],
+            'child' : child
         }
     }

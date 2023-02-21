@@ -1,7 +1,6 @@
 import sre_parse
 from RegExtra.RegexTree.PatternNode.enums import CategoryType, PatternType
-from RegExtra.RegexTree.regexTree import NodeType
-
+from RegExtra.RegexTree.nodeEnums import NodeType
 
 def createPatternNode(rawData):
     node = {'type' : NodeType.PATTERN}
