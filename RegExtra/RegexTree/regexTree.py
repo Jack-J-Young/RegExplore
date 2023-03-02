@@ -7,6 +7,7 @@ from RegExtra.RegexTree.nodeEnums import NodeType
 from solveHelpers import getOrderedPerms
 import json
 
+# Turns ast into regex tree object
 def regexToNode(rawData): 
 
     node = {
@@ -14,16 +15,21 @@ def regexToNode(rawData):
         'value' : None
     }
 
+    # List element
     if isinstance(rawData, sre_parse.SubPattern):
         if len(rawData.data) == 1:
+            # Dont create list if only 1 element
             node = regexToNode(rawData.data[0])
         else:
+            # Recursively call for all elements in list
             node = {
                 'type' : NodeType.LIST,
                 'value' : [regexToNode(subData) for subData in rawData.data]
             }
 
+
     elif isinstance(rawData, tuple):
+        #  Quant nodes
         if rawData[0] == sre_parse.MAX_REPEAT:
             node = createQuantNode(rawData[1], regexToNode(rawData[1][2]))
 
@@ -33,6 +39,7 @@ def regexToNode(rawData):
                 'value' : [regexToNode(subData) for subData in rawData.data]
             }
 
+        # Pattern: Literal
         elif rawData[0] == sre_parse.LITERAL:
             node['type'] = NodeType.PATTERN
             node['value'] = {
@@ -41,6 +48,7 @@ def regexToNode(rawData):
                 'regex' : chr(rawData[1]) + ""
             }
 
+        # Pattern: everything else
         elif rawData[0] == sre_parse.IN:
             node = createPatternNode(rawData[1])
 
@@ -50,6 +58,7 @@ def regexToNode(rawData):
 
     return node
 
+# Create regex string to regex tree
 def nodeToRegex(parentNode):
     if parentNode['type'] == NodeType.LIST:
         return '(' + ''.join([nodeToRegex(i) for i in parentNode['value']]) + ')'
@@ -74,7 +83,10 @@ def nodeToRegex(parentNode):
         return parentNode['value']['regex']
     return ''
 
+# Check if string matches a regex
 def getMatchData(parentNode, string, pastPos = 0):
+
+    # List node
     if parentNode['type'] == NodeType.LIST:
         output = [{
             'type' : NodeType.LIST,
@@ -92,6 +104,7 @@ def getMatchData(parentNode, string, pastPos = 0):
 
             nextOutput = []
             for data in output:
+                # Get match for child nodes and move the stored positions
                 matchData = getMatchData(child, string, data['endPos'] + 1)
                 if matchData:
                     nextOutput += [{
@@ -106,27 +119,19 @@ def getMatchData(parentNode, string, pastPos = 0):
             
             output = nextOutput
         
+        # Create current matched string
         for data in output:
             for child in data['children']:
                 data['string'] += child['string']
     
         return output
 
-
-        # for childNode in parentNode['value']:
-        #     matches = getMatchData(childNode, string, pastData)
-        #     output = [{
-        #         'type' : NodeType.LIST,
-        #         'startPos' : i['startPos'],
-        #         'endPos' : i['endPos'],
-        #         'size' : i['endPos'] - i['startPos'] + 1,
-        #         'children' : [i]
-        #     } for i in matches]
-        
-
+    # Match Quant nodes IF the match has the right length, also gets all possible matches
     elif parentNode['type'] == NodeType.QUANT:
+        # Get all child matches
         unfiltered = getMatchData(parentNode['value']['child'], string, pastPos)
 
+        # Check the length of each match and add node about quant sizes
         if unfiltered:
             output = []
 
@@ -145,6 +150,7 @@ def getMatchData(parentNode, string, pastPos = 0):
                 'node' : parentNode
             } for i in output]
 
+    # Get all matches for current node
     elif parentNode['type'] == NodeType.PATTERN:
         output = []
         matches = getUnitMatches(parentNode['value']['regex'], string, pastPos)
@@ -161,26 +167,20 @@ def getUnitMatches(pattern, string, startIndex = 0):
     # Get match blocks
     index = startIndex
 
-    # print(index)
-    # print(len(input))
-    # print(self.char)
-    # print(input[index])
-    # print(True if index < len(input) else False)
-    # print(True if re.match(self.char, input[index]) else False)
-    # print(True if index < len(input) and re.match(self.char, input[index]) else False)
-
+    # From start go to final match length
     while index < len(string) and re.match(pattern, string[index]):
         index += 1
     
     if index == startIndex:
         return None
     else:
+        #  Get all posible permutations given max length
         ranges = getOrderedPerms(startIndex, index - startIndex)
         for orderedTuple in ranges:
             chars = ''
             for c in orderedTuple:
                 chars += str(string[c])
-            # output.append((orderedTuple[0], orderedTuple[-1], chars))
+        
             output.append({
                 'type' : NodeType.PATTERN,
                 'startPos' : orderedTuple[0],

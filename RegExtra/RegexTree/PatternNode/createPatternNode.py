@@ -26,7 +26,7 @@ def createPatternNode(rawData):
     elif charData[0] == sre_parse.RANGE:
         node['value'] = {
             'type' : PatternType.RANGE,
-            'value' : (chr(charData[1][0]), chr(charData[1][1])),
+            'value' : (charData[1][0], charData[1][1]),
             'regex' : f'[{chr(charData[1][0])}-{chr(charData[1][1])}]'
         }
     else:

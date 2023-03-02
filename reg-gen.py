@@ -1,9 +1,10 @@
 from random import SystemRandom
 from rstr import Rstr
+from RegExtra.RegexTree.PatternNode.enums import PatternType
 from fileManager import saveListToFile, getFileInfoDensity
 from regexParse import regexToAst       
 import RegExtra.RegexTree.regexTree as regexTree
-import matchTransform
+import RegExtra.Match.matchTransform as matchTransform
 
 sampleSize = 100
 regex = r"\d{1,9}-[A-Z]{1,3}-\d+"
@@ -25,16 +26,36 @@ print(regexTree.nodeToRegex(parent['value'][0]))
 #matchData = parent.getMatches('01-D-6542')
 
 matchTransform.transformQuantifiers([
-    '131-D-1',
-    '13-Dð-3',
-    '131-D-1',
+    '131-F-1',
+    '13-D-3',
+    '131-G-1',
     '1323-D-3',
-    '1313-D-1',
+    '1313-E-1',
     '13-D-3',
 ], [
     '01-D-12534',
     '98-D-32244'
-], parent, lambda acceptSet, rejectSet : (min(acceptSet), max(acceptSet)))
+], parent, lambda properties : (min(properties['acceptSet']), max(properties['acceptSet'])))
+
+def basicPatTrans(properties):
+    set = [item for sublist in [c for c in properties['acceptSet']] for item in sublist]
+    return {
+            'type' : PatternType.RANGE,
+            'value' : (min(set), max(set)),
+            'regex' : f'[{min(set)}-{max(set)}]'
+        }
+
+matchTransform.transformPatterns([
+    '131-F-1',
+    '13-D-3',
+    '131-G-1',
+    '1323-D-3',
+    '1313-E-1',
+    '13-D-3',
+], [
+    '01-D-12534',
+    '98-D-32244'
+], parent, basicPatTrans)
 
 print(regexTree.nodeToRegex(parent))
 

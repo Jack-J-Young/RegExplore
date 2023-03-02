@@ -15,7 +15,7 @@ def getSetFromCategories(categoryList):
 def patternToSet(node):
     match node['value']['type']:
         case PatternType.RANGE:
-            return [chr(x + node['value']['value'][0]) for x in node['value']['value'][1]]
+            return [chr(x + node['value']['value'][0]) for x in range(node['value']['value'][1] - node['value']['value'][0])]
         case PatternType.CATEGORY:
             match node['value']['value']:
                 case CategoryType.DIGIT:
