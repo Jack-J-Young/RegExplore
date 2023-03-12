@@ -44,23 +44,6 @@ def getNodeTypes(acceptArray, rejectArray, getMethod):
     
     return outputPairs
 
-# Get all Quantifiers from a set of accept and reject string matches, then modify them based on the process function
-def transformQuantifiers(acceptStrings, rejectStrings, regexTree, processFunction):
-    acceptArray = matchArray(acceptStrings, regexTree)
-    rejectArray = matchArray(rejectStrings, regexTree)
-
-    quants = getNodeTypes(acceptArray, rejectArray, getQuants)
-    
-    for quant in quants:
-        acceptSet = [i['size'] for i in quant[1]]
-        rejectSet = [i['size'] for i in quant[2]]
-        newTuple = processFunction({
-            'acceptSet' : acceptSet,
-            'rejectSet' : rejectSet,
-            'currentRange' : (quant[0]['value']['lower'], quant[0]['value']['upper'])
-            })
-        quant[0]['value']['lower'] = newTuple[0]
-        quant[0]['value']['upper'] = newTuple[1]
 
 # Get all Quantifiers from a set of accept and reject string matches, then get all possible permutations of quantifier changes based on the method processFunction
 def transformQuantifierPermutations(acceptStrings, rejectStrings, regexTree, processFunction):
@@ -102,23 +85,7 @@ def transformQuantifierPermutations(acceptStrings, rejectStrings, regexTree, pro
 
     return output
 
-# Get all Patterns from a set of accept and reject string matches, then modify them based on the process function
-def transformPatterns(acceptStrings, rejectStrings, regexTree, processFunction):
-    acceptArray = matchArray(acceptStrings, regexTree)
-    rejectArray = matchArray(rejectStrings, regexTree)
-
-    patterns = getNodeTypes(acceptArray, rejectArray, getPatterns)
-    
-    for pattern in patterns:
-        acceptSet = [i['string'] for i in pattern[1]]
-        rejectSet = [i['string'] for i in pattern[2]]
-        newValue = processFunction({
-            'acceptMatches' : acceptSet,
-            'rejectMatches' : rejectSet,
-            'currentSet' : patternToSet(pattern[0])
-        })
-        pattern[0]['value'] = newValue
-
+# Transform all pattern nodes and created permutations from them based on a given function
 def transformPatternPermutations(acceptStrings, rejectStrings, regexTree, processFunction):
 
     acceptArray = matchArray(acceptStrings, regexTree)
@@ -157,41 +124,6 @@ def transformPatternPermutations(acceptStrings, rejectStrings, regexTree, proces
             output.append(currentRegexTree)
 
     return output
-
-# TODO: Get all pairings of nodes in lists, use a process function on them and add the result instead, allowing you to create conditions to merge them
-def transformMerge(acceptStrings, rejectStrings, regexTree, processFunction):
-    acceptArray = matchArray(acceptStrings, regexTree)
-    rejectArray = matchArray(rejectStrings, regexTree)
-
-    patterns = getNodeTypes(acceptArray, rejectArray, getPatterns)
-    
-    for pattern in patterns:
-        acceptSet = [i['string'] for i in pattern[1]]
-        rejectSet = [i['string'] for i in pattern[2]]
-        newValue = processFunction({
-            'acceptSet' : acceptSet,
-            'rejectSet' : rejectSet,
-            'currentSet' : patternToSet(pattern[0])
-            })
-        pattern[0]['value'] = newValue
-
-# Gets all nodes in lists, run a process function on it that allows it to split the nodes
-def transformSplit(acceptStrings, rejectStrings, regexTree, processFunction):
-    acceptArray = matchArray(acceptStrings, regexTree)
-    rejectArray = matchArray(rejectStrings, regexTree)
-
-    lists = getNodeTypes(acceptArray, rejectArray, getLists)
-    
-    for list in lists:
-        for index, item in reversed(list(enumerate(list[0]['children']))):
-            if item['type'] == NodeType.QUANT:
-                newQuants = processFunction({
-                    'acceptValue' : list[1]['children'][index],
-                    'rejectValue' : list[2]['children'][index],
-                    'currentValue' : list[0]['children'][index],
-                })
-                list['children'][index] = newQuants
-                list['children'].insert(index, newQuants)
 
 # Gets all nodes in lists, run a process function on it that allows it to split the nodes
 def transformSplitPermutations(acceptStrings, rejectStrings, regexTree, processFunction):
@@ -247,6 +179,9 @@ def transformSplitPermutations(acceptStrings, rejectStrings, regexTree, processF
                 output.append(newParent)
 
     return output
+
+
+# Serch functions:
 
 def getLists(matchData):
     output = []
