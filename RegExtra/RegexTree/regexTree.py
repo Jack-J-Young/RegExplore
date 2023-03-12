@@ -1,42 +1,46 @@
 import sre_parse
 import re
 from RegExtra.RegexTree.PatternNode.createPatternNode import createPatternNode
-from RegExtra.RegexTree.PatternNode.enums import CategoryType, PatternType
+from RegExtra.RegexTree.PatternNode.PatternEnums import CategoryType, PatternType
+from RegExtra.RegexTree.QuantNode.QuantEnums import QuantSpecials
 from RegExtra.RegexTree.QuantNode.createQuantNode import createQuantNode
 from RegExtra.RegexTree.nodeEnums import NodeType
 from solveHelpers import getOrderedPerms
 import json
 
 # Turns ast into regex tree object
-def regexToNode(rawData): 
+def regexToNode(rawData, path = []): 
 
     node = {
         'type' : NodeType.UNKOWN,
-        'value' : None
+        'value' : None,
+        'path' : path
     }
 
     # List element
     if isinstance(rawData, sre_parse.SubPattern):
         if len(rawData.data) == 1:
             # Dont create list if only 1 element
-            node = regexToNode(rawData.data[0])
+            node = regexToNode(rawData.data[0], path)
         else:
             # Recursively call for all elements in list
             node = {
                 'type' : NodeType.LIST,
-                'value' : [regexToNode(subData) for subData in rawData.data]
+                'value' : [regexToNode(rawData.data[subDataIndex], path + ['value' , subDataIndex]) for subDataIndex in range(len(rawData.data))],
+                'path' : path
             }
 
 
     elif isinstance(rawData, tuple):
         #  Quant nodes
         if rawData[0] == sre_parse.MAX_REPEAT:
-            node = createQuantNode(rawData[1], regexToNode(rawData[1][2]))
+            node = createQuantNode(rawData[1], regexToNode(rawData[1][2], path + ['value', 'child']), path)
 
         elif rawData[0] == sre_parse.SUBPATTERN:
             node = {
                 'type' : NodeType.LIST,
-                'value' : [regexToNode(subData) for subData in rawData.data]
+                'value' : [regexToNode(rawData.data[subDataIndex], path + ['value' ,subDataIndex]) for subDataIndex in range(len(rawData.data))],
+                'path' : path
             }
 
         # Pattern: Literal
@@ -50,22 +54,29 @@ def regexToNode(rawData):
 
         # Pattern: everything else
         elif rawData[0] == sre_parse.IN:
-            node = createPatternNode(rawData[1])
-
-        else:
-            node['type'] = NodeType.UNKOWN
-            node['value'] = None
+            node = createPatternNode(rawData[1], path)
+        
+        elif rawData[0] == sre_parse.ANY:
+            node['type'] = NodeType.PATTERN
+            node['value'] = {
+                'type' : PatternType.CATEGORY,
+                'value' : CategoryType.ANY,
+                'regex' : '.'
+            }
 
     return node
 
 # Create regex string to regex tree
 def nodeToRegex(parentNode):
+    if parentNode == None:
+        return ''
+
     if parentNode['type'] == NodeType.LIST:
         return '(' + ''.join([nodeToRegex(i) for i in parentNode['value']]) + ')'
     elif parentNode['type'] == NodeType.QUANT:
-        if parentNode['value']['lower'] == 0 and parentNode['value']['upper'] == sre_parse.MAXREPEAT:
+        if parentNode['value']['lower'] == 0 and parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
             return nodeToRegex(parentNode['value']['child']) + '*'
-        elif parentNode['value']['lower'] == 1 and parentNode['value']['upper'] == sre_parse.MAXREPEAT:
+        elif parentNode['value']['lower'] == 1 and parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
             return nodeToRegex(parentNode['value']['child']) + '+'
         elif parentNode['value']['lower'] == 0 and parentNode['value']['upper'] == 1:
             return nodeToRegex(parentNode['value']['child']) + '?'
@@ -75,7 +86,7 @@ def nodeToRegex(parentNode):
             return nodeToRegex(parentNode['value']['child']) + '{' + str(parentNode['value']['lower']) + '}'
         elif parentNode['value']['lower'] == 0:
             return nodeToRegex(parentNode['value']['child']) + '{,' + str(parentNode['value']['upper']) + '}'
-        elif parentNode['value']['upper'] == sre_parse.MAXREPEAT:
+        elif parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
             return nodeToRegex(parentNode['value']['child']) + '{' + str(parentNode['value']['lower']) + ',}'
         else:
             return nodeToRegex(parentNode['value']['child']) + '{' + str(parentNode['value']['lower']) + ',' + str(parentNode['value']['upper']) + '}'
@@ -137,7 +148,7 @@ def getMatchData(parentNode, string, pastPos = 0):
 
             for matchData in unfiltered:
                 size = matchData['endPos'] - matchData['startPos'] + 1
-                if (size >= parentNode['value']['lower']) and ((parentNode['value']['upper'] == sre_parse.MAX_REPEAT) or (size <= parentNode['value']['upper'])):
+                if (size >= parentNode['value']['lower']) and ((parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT) or (size <= parentNode['value']['upper'])):
                     output.append(matchData)
             
             return [{
@@ -194,3 +205,23 @@ def getUnitMatches(pattern, string, startIndex = 0):
 def matchArray(stringArray, regexTree):
     dataArray = [getMatchData(regexTree, i) for i in stringArray]
     return dataArray
+
+def pushPath(node, newStart):
+    node['path'] = newStart + node['path']
+
+    match node['type']:
+        case NodeType.LIST:
+            for index in range(len(node['path']['value'])):
+                pushPath(node['value'][index], newStart)
+        case NodeType.QUANT:
+            pushPath(node['value']['child'], newStart)
+
+def changePathIndex(node, index, newValue):
+    node['path'][index] = newValue
+
+    match node['type']:
+        case NodeType.LIST:
+            for i in range(len(node['path']['value'])):
+                changePathIndex(node['value'][i], index, newValue)
+        case NodeType.QUANT:
+            changePathIndex(node['value']['child'], index, newValue)

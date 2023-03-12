@@ -1,0 +1,29 @@
+{
+    "tools" : [
+        {
+            "type" : "quant",
+            "functionName" : "minWrapQuant",
+            "module" : "defaultFunctions"
+        },
+        {
+            "type" : "pattern",
+            "functionName" : "minWrapPattern",
+            "module" : "defaultFunctions"
+        },
+        {
+            "type" : "pattern",
+            "functionName" : "setCategoryPattern",
+            "module" : "defaultFunctions"
+        },
+        {
+            "type" : "pattern",
+            "functionName" : "inchWrapPattern",
+            "module" : "defaultFunctions"
+        },
+        {
+            "type" : "split",
+            "functionName" : "bruteSplit",
+            "module" : "defaultFunctions"
+        }
+    ]
+}

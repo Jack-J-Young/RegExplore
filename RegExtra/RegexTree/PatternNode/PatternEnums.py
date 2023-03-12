@@ -7,6 +7,7 @@ class PatternType(Enum):
     CATEGORY = 2
 
 class CategoryType(Enum):
-    UNKOWN = -1
-    DIGIT = 0,
-    WORD = 0,
+    UNKOWN = -1,
+    ANY = 0,
+    DIGIT = 1,
+    WORD = 2

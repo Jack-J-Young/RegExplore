@@ -1,6 +1,10 @@
 import bz2, os
+from random import SystemRandom
+
+from rstr import Rstr
 
 compressionLevel = 9
+rs = Rstr(SystemRandom())
 
 def saveListToFile(fileName, data):
     with open(fileName, 'w') as file:
@@ -23,3 +27,23 @@ def getFileInfoDensity(inputDir):
 
     # Return compression ratio = compressed size / original size
     return getFileSize(r'./.temp') / getFileSize(inputDir)
+
+def genRegexStrings(size, regex):
+    output = []
+    for i in range(size):
+        output.append(rs.xeger(regex))
+    return output
+
+def getRegexDensity(regex, sampleSize = 500):
+    saveListToFile(r'./input.txt', genRegexStrings(sampleSize, regex))
+    return getFileInfoDensity(r'./input.txt')
+
+def getListDensity(list):
+    saveListToFile(r'./input.txt', list)
+    return getFileInfoDensity(r'./input.txt')
+
+def getDensityScoreFromReference(referenceDensity, density):
+    if density > referenceDensity:
+        return 1 - (density - referenceDensity) / (1 - referenceDensity)
+    else:
+        return density / referenceDensity
