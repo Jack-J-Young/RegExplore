@@ -1,11 +1,10 @@
-from rstr import Rstr
-from RegExtra.RegexTree.toolset.toolCreator import loadTools
+from RegExtra.RegexTree.toolset.toolCreator import loadConfig
 from RegExtra.RegexTree.toolset.toolSolver import firstParetoSolve
 from regexParse import regexToAst       
 import RegExtra.RegexTree.regexTree as regexTree
 
-regex = r".*"
-#regex = r".*-.*-.*"
+#regex = r".*"
+regex = r".*-.*-.*"
 #regex = r"\d{1,9}-[A-Z]{1,3}-\d+"
 
 # ([09]\d|1[012]|[12]\d[12])-(C|CE|CN|CW|D|DL|G|KE|KK|KY|L|LD|LH|LM|LS|MH|MN|MO|OY|RN|SO|T|W|WH|WW|WX)-([1-9]\d{0,9}|\d{1,10})
@@ -25,7 +24,7 @@ parent = regexTree.regexToNode(ast)
 
 #matchData = parent.getMatches('01-D-6542')
 
-toolset = loadTools()
+config = loadConfig()
 
 accepts = [
     '11-DL-449089',
@@ -131,15 +130,17 @@ accepts = [
 ]
 
 rejects = [
-    '01-D-12534',
-    '98-D-32244'
+    '01-D-1253f4',
+    '01-DER-12534',
+    '01-1-12534',
+    '9834-D-32244'
 ]
 
 # matches = getToolMatches(accepts, rejects, parent, toolset)
 
 # getOptimalSolutions(accepts, rejects, matches)
 
-firstParetoSolve(accepts, rejects, parent, toolset)
+firstParetoSolve(accepts, rejects, parent, config)
 
 # matchTransform.transformQuantifiers([
 #     '131-F-1',

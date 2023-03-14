@@ -9,11 +9,12 @@ from solveHelpers import getOrderedPerms
 import json
 
 # Turns ast into regex tree object
-def regexToNode(rawData, path = []): 
+def regexToNode(rawData, parent = None, path = []): 
 
     node = {
         'type' : NodeType.UNKOWN,
         'value' : None,
+        'parent' : parent,
         'path' : path
     }
 
@@ -21,27 +22,33 @@ def regexToNode(rawData, path = []):
     if isinstance(rawData, sre_parse.SubPattern):
         if len(rawData.data) == 1:
             # Dont create list if only 1 element
-            node = regexToNode(rawData.data[0], path)
+            node = regexToNode(rawData.data[0], parent, path)
         else:
             # Recursively call for all elements in list
             node = {
                 'type' : NodeType.LIST,
-                'value' : [regexToNode(rawData.data[subDataIndex], path + ['value' , subDataIndex]) for subDataIndex in range(len(rawData.data))],
+                'value' : None,
+                'parent' : parent,
                 'path' : path
             }
+
+            node['value'] = [regexToNode(rawData.data[subDataIndex], node, ['value', subDataIndex]) for subDataIndex in range(len(rawData.data))]
 
 
     elif isinstance(rawData, tuple):
         #  Quant nodes
         if rawData[0] == sre_parse.MAX_REPEAT:
-            node = createQuantNode(rawData[1], regexToNode(rawData[1][2], path + ['value', 'child']), path)
+            node = createQuantNode(rawData[1], parent, path)
+            node['value']['child'] = regexToNode(rawData[1][2], node, ['value', 'child'])
 
         elif rawData[0] == sre_parse.SUBPATTERN:
             node = {
                 'type' : NodeType.LIST,
-                'value' : [regexToNode(rawData.data[subDataIndex], path + ['value' ,subDataIndex]) for subDataIndex in range(len(rawData.data))],
+                'value' : None,
+                'parent' : parent,
                 'path' : path
             }
+            node['value'] = [regexToNode(rawData.data[subDataIndex], node, ['value', subDataIndex]) for subDataIndex in range(len(rawData.data))]
 
         # Pattern: Literal
         elif rawData[0] == sre_parse.LITERAL:
@@ -50,11 +57,11 @@ def regexToNode(rawData, path = []):
                 'type' : PatternType.LITERAL,
                 'value' : chr(rawData[1]),
                 'regex' : chr(rawData[1]) + ""
-            }
+            } 
 
         # Pattern: everything else
         elif rawData[0] == sre_parse.IN:
-            node = createPatternNode(rawData[1], path)
+            node = createPatternNode(rawData[1], parent, path)
         
         elif rawData[0] == sre_parse.ANY:
             node['type'] = NodeType.PATTERN
@@ -206,22 +213,10 @@ def matchArray(stringArray, regexTree):
     dataArray = [getMatchData(regexTree, i) for i in stringArray]
     return dataArray
 
-def pushPath(node, newStart):
-    node['path'] = newStart + node['path']
+def getTotalPath(node):
+    path = []
+    while node['parent'] != None:
+        path = node['path'] + path
+        node = node['parent']
 
-    match node['type']:
-        case NodeType.LIST:
-            for index in range(len(node['path']['value'])):
-                pushPath(node['value'][index], newStart)
-        case NodeType.QUANT:
-            pushPath(node['value']['child'], newStart)
-
-def changePathIndex(node, index, newValue):
-    node['path'][index] = newValue
-
-    match node['type']:
-        case NodeType.LIST:
-            for i in range(len(node['path']['value'])):
-                changePathIndex(node['value'][i], index, newValue)
-        case NodeType.QUANT:
-            changePathIndex(node['value']['child'], index, newValue)
+    return path

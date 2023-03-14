@@ -2,8 +2,8 @@ import sre_parse
 from RegExtra.RegexTree.PatternNode.PatternEnums import CategoryType, PatternType
 from RegExtra.RegexTree.nodeEnums import NodeType
 
-def createPatternNode(rawData, path):
-    node = {'type' : NodeType.PATTERN, 'path' : path}
+def createPatternNode(rawData, parent, path):
+    node = {'type' : NodeType.PATTERN, 'parent' : parent, 'path' : path}
     
     charData = rawData[0]
     if len(rawData) > 1:

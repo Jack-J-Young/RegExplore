@@ -1,34 +1,56 @@
 from enum import Enum
 import json
 
-class ToolType(Enum):
-    UNKOWN = -1
-    QUANT = 0
-    PATTERN = 1
-    SPLIT = 2
+from RegExtra.RegexTree.nodeEnums import NodeType
 
-def loadTools(path = './configs/default.json'):
+class StepType(Enum):
+    UNKOWN = -1
+    REPLACE = 0
+    INSERT = 1
+    DELETE = 2
+
+def loadConfig(path = './configs/default.json'):
     configFile = open(path)
     config = json.load(configFile)
     
-    tools = []
+    steps = dict()
 
-    for toolData in config['tools']:
-        tool = {'type' : ToolType.UNKOWN}
+    for stepData in config['steps']:
+        step = {'type' : StepType.UNKOWN}
 
-        match toolData['type']:
-            case 'quant':
-                tool['type'] = ToolType.QUANT
-            case 'pattern':
-                tool['type'] = ToolType.PATTERN
-            case 'split':
-                tool['type'] = ToolType.SPLIT
-            
+        match stepData['type']:
+            case 'replace':
+                step['type'] = StepType.REPLACE
+            case 'insert':
+                step['type'] = StepType.INSERT
+            case 'delete':
+                step['type'] = StepType.DELETE
         
-        module = __import__(toolData['module'], fromlist=[toolData['functionName']])
+        inputTypes = []
+        for inputString in stepData['inputTypes']:
+            match inputString:
+                case 'list':
+                    inputTypes.append(NodeType.LIST)
+                case 'quant':
+                    inputTypes.append(NodeType.QUANT)
+                case 'pattern':
+                    inputTypes.append(NodeType.PATTERN)
+        step['inputTypes'] = inputTypes
 
-        tool['function'] = getattr(module, toolData['functionName'])
+        module = __import__(stepData['module'], fromlist=[stepData['functionName']])
 
-        tools.append(tool)
+        step['function'] = getattr(module, stepData['functionName'])
 
-    return tools
+        steps[stepData['name']] = step
+
+    operations = dict()
+
+    for operation in config['operations']:
+        operations[operation['name']] = operation
+
+    config = {
+        "steps" : steps,
+        "operations" : operations
+    }
+
+    return config

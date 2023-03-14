@@ -1,29 +1,19 @@
 {
-    "tools" : [
+    "steps" : [
         {
-            "type" : "quant",
-            "functionName" : "minWrapQuant",
-            "module" : "defaultFunctions"
-        },
+            "name" : "minWrap",
+            "type" : "replace",
+            "functionName" : "replaceMinWrap",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["quant", "pattern"]
+        }
+    ],
+    "operations" : [
         {
-            "type" : "pattern",
-            "functionName" : "minWrapPattern",
-            "module" : "defaultFunctions"
-        },
-        {
-            "type" : "pattern",
-            "functionName" : "setCategoryPattern",
-            "module" : "defaultFunctions"
-        },
-        {
-            "type" : "pattern",
-            "functionName" : "inchWrapPattern",
-            "module" : "defaultFunctions"
-        },
-        {
-            "type" : "split",
-            "functionName" : "bruteSplit",
-            "module" : "defaultFunctions"
+            "name" : "minWrap",
+            "steps" : [
+                "minWrap"
+            ]
         }
     ]
 }
