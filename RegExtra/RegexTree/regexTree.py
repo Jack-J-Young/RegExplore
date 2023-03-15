@@ -31,8 +31,24 @@ def regexToNode(rawData, parent = None, path = []):
                 'parent' : parent,
                 'path' : path
             }
-
+            
             node['value'] = [regexToNode(rawData.data[subDataIndex], node, ['value', subDataIndex]) for subDataIndex in range(len(rawData.data))]
+            
+            for childIndex in range(len(node['value'])):
+                if node['value'][childIndex]['type'] == NodeType.PATTERN:
+                    node['value'][childIndex] = {
+                        'type': NodeType.QUANT,
+                        'value' : {
+                            'lower' : 1,
+                            'upper' : 1,
+                            'child' : node['value'][childIndex]
+                        },
+                        'parent' : node,
+                        'path' : node['value'][childIndex]['path']
+                    }
+                    
+                    node['value'][childIndex]['value']['child']['parent'] = node['value'][childIndex]
+                    node['value'][childIndex]['value']['child']['path'] = ['value', 'child']
 
 
     elif isinstance(rawData, tuple):
@@ -49,6 +65,22 @@ def regexToNode(rawData, parent = None, path = []):
                 'path' : path
             }
             node['value'] = [regexToNode(rawData.data[subDataIndex], node, ['value', subDataIndex]) for subDataIndex in range(len(rawData.data))]
+            
+            for childIndex in range(len(node['value'])):
+                if node['value'][childIndex]['type'] == NodeType.PATTERN:
+                    node['value'][childIndex] = {
+                        'type': NodeType.QUANT,
+                        'value' : {
+                            'lower' : 1,
+                            'upper' : 1,
+                            'child' : node['value'][childIndex]
+                        },
+                        'parent' : node,
+                        'path' : node['value'][childIndex]['path']
+                    }
+                    
+                    node['value'][childIndex]['value']['child']['parent'] = node['value'][childIndex]
+                    node['value'][childIndex]['value']['child']['path'] = ['value', 'child']
 
         # Pattern: Literal
         elif rawData[0] == sre_parse.LITERAL:
@@ -87,7 +119,7 @@ def nodeToRegex(parentNode):
             return nodeToRegex(parentNode['value']['child']) + '+'
         elif parentNode['value']['lower'] == 0 and parentNode['value']['upper'] == 1:
             return nodeToRegex(parentNode['value']['child']) + '?'
-        elif parentNode['value']['lower'] == 0 and parentNode['value']['upper'] == 0:
+        elif parentNode['value']['lower'] == 1 and parentNode['value']['upper'] == 1:
             return nodeToRegex(parentNode['value']['child'])
         elif parentNode['value']['lower'] == parentNode['value']['upper']:
             return nodeToRegex(parentNode['value']['child']) + '{' + str(parentNode['value']['lower']) + '}'
@@ -103,82 +135,86 @@ def nodeToRegex(parentNode):
 
 # Check if string matches a regex
 def getMatchData(parentNode, string, pastPos = 0):
-
-    print(nodeToRegex(parentNode))
     # List node
     if parentNode['type'] == NodeType.LIST:
-        output = [{
-            'type' : NodeType.LIST,
-            'startPos' : -1,
-            'endPos' : -1,
-            'size' : 0,
-            'string' : '',
-            'children' : [],
-            'node' : parentNode
-        }]
+        # {
+        #     'type' : NodeType.LIST,
+        #     'value' : [],
+        #     'node' : parentNode
+        # }
+        output = getMatchData(parentNode['value'][0], string, pastPos)
 
-        for child in parentNode['value']:
+        for child in parentNode['value'][1:]:
             if len(output) == 0:
                 return None
+            
+            positions = []
+            for data in output:
+                if data['range'][0] == data['range'][1]:
+                    positions.append(data['range'][0])
+                positions += range(data['range'][0], data['range'][1])
+                
+            positions = list(dict.fromkeys(positions))
 
             nextOutput = []
-            for data in output:
-                # Get match for child nodes and move the stored positions
-                matchData = getMatchData(child, string, data['endPos'] + 1)
-                if matchData:
-                    nextOutput += [{
-                        'type' : NodeType.LIST,
-                        'startPos' : i['startPos'],
-                        'endPos' : i['endPos'],
-                        'size' : i['endPos'] - data['startPos'] + 1,
-                        'string' : '',
-                        'children' : data['children'] + [i],
-                        'node' : parentNode
-                    } for i in matchData]
+            for matches in [getMatchData(child, string, i) for i in positions]:
+                if matches:
+                    nextOutput += matches
             
             output = nextOutput
-        
-        # Create current matched string
-        for data in output:
-            for child in data['children']:
-                data['string'] += child['string']
     
         return output
 
     # Match Quant nodes IF the match has the right length, also gets all possible matches
     elif parentNode['type'] == NodeType.QUANT:
         # Get all child matches
-        unfiltered = getMatchData(parentNode['value']['child'], string, pastPos)
-
-        # Check the length of each match and add node about quant sizes
-        if unfiltered:
+        unfilteredList = getMatchData(parentNode['value']['child'], string, pastPos)
+        
+        if unfilteredList:
             output = []
-
-            for matchData in unfiltered:
-                size = matchData['endPos'] - matchData['startPos'] + 1
-                if (size >= parentNode['value']['lower']) and ((parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT) or (size <= parentNode['value']['upper'])):
-                    output.append(matchData)
             
-            return [{
-                'type' : NodeType.QUANT,
-                'startPos' : i['startPos'],
-                'endPos' : i['endPos'],
-                'size' : i['size'],
-                'string' : i['string'],
-                'child' : i,
-                'node' : parentNode
-            } for i in output]
+            for unfiltered in unfilteredList:  
+                # Check the length of each match and add node about quant sizes
+                if parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
+                    output.append({
+                        'type' : NodeType.QUANT,
+                        'range' : (parentNode['value']['lower'] + pastPos, len(string) - 1),
+                        'child' : unfiltered,
+                        'node' : parentNode
+                    })
+                else:
+                    output.append({
+                    'type' : NodeType.QUANT,
+                    'range' : (parentNode['value']['lower'] + pastPos, min(parentNode['value']['upper'] + pastPos, len(string) - 1)),
+                    'child' : unfiltered,
+                    'node' : parentNode
+                })
+            return output
+        return None
 
     # Get all matches for current node
     elif parentNode['type'] == NodeType.PATTERN:
-        output = []
-        matches = getUnitMatches(parentNode['value']['regex'], string, pastPos)
-        if matches:
-            for i in matches:
-                i.update({'node' : parentNode})
-                output.append(i)
-            return output
-    return None
+        cutString = string[pastPos:]
+        rangeRegex = '{' + str(parentNode['parent']['value']['lower']) + ',' + ('' if parentNode['parent']['value']['upper'] == QuantSpecials.MAX_REPEAT else str(parentNode['parent']['value']['upper'])) + '}'
+        match = re.match(f"\A{parentNode['value']['regex']}{rangeRegex}", cutString)
+        
+        if match:
+            span = match.span()
+            
+            strings = []
+            
+            if parentNode['parent']['value']['lower'] == 0:
+                strings = ['']
+            for index in range(span[1] - span[0]):
+                strings.append(string[span[0] + pastPos : index + span[0] + pastPos + 1])
+            
+            return [{
+                    'type' : NodeType.PATTERN,
+                    'strings' : strings,
+                    'node' : parentNode
+                }]
+        else:
+            return None
 
 def getUnitMatches(pattern, string, startIndex = 0):
     output = []
@@ -193,7 +229,7 @@ def getUnitMatches(pattern, string, startIndex = 0):
     if index == startIndex:
         return None
     else:
-        #  Get all posible permutations given max length
+        #  Get all possible permutations given max length
         ranges = getOrderedPerms(startIndex, index - startIndex)
         for orderedTuple in ranges:
             chars = ''
@@ -211,15 +247,7 @@ def getUnitMatches(pattern, string, startIndex = 0):
         return output
 
 def matchArray(stringArray, regexTree):
-    dataArray = []
-    
-    for i in stringArray:
-        print(i)
-        temp = getMatchData(regexTree, i)
-        dataArray.append(temp)
-        
-    # dataArray = [getMatchData(regexTree, i) for i in stringArray]
-    return dataArray
+    return [getMatchData(regexTree, i) for i in stringArray]
 
 def getTotalPath(node):
     path = []

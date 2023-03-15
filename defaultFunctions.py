@@ -6,14 +6,14 @@ from RegExtra.RegexTree.nodeEnums import NodeType
 
 def replaceMinWrap(properties):
     if properties['currentNode']['type'] == NodeType.QUANT:
-        acceptSet = [i['size'] for i in properties['acceptMatches']]
+        acceptSet = [len(item) for sublist in properties['acceptMatches'] for item in sublist['child']['strings']]
 
         newNode = copy.deepcopy(properties['currentNode'])
         newNode['value']['lower'] = min(acceptSet)
         newNode['value']['upper'] = max(acceptSet)
         return [newNode]
     else:
-        acceptSet = [i['string'] for i in properties['acceptMatches']]
+        acceptSet = [item for sublist in properties['acceptMatches'] for item in sublist['strings']]
 
         # Get all characters from list of accept strings
         charSet = list(dict.fromkeys([item for sublist in [c for c in acceptSet] for item in sublist]))
@@ -36,7 +36,7 @@ def replaceMinWrap(properties):
         return [newNode]
 
 def inchWrapPattern(properties):
-    acceptSet = [i['string'] for i in properties['acceptMatches']]
+    acceptSet = [item for sublist in properties['acceptMatches'] for item in sublist['strings']]
 
     parent = copy.deepcopy(properties['currentNode']['parent'])
 
@@ -73,7 +73,7 @@ def inchWrapPattern(properties):
     return output
 
 def setCategoryPattern(properties):
-    acceptSet = [i['string'] for i in properties['acceptMatches']]
+    acceptSet = [item for sublist in properties['acceptMatches'] for item in sublist['strings']]
     
     charSet = [item for sublist in [c for c in acceptSet] for item in sublist]
 

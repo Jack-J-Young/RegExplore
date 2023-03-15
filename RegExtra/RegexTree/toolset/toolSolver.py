@@ -76,6 +76,7 @@ def getToolMatches(acceptSet, rejectSet, regexList, config):
             operationCollection = []
             
             for opRegex in operationRegex:
+                print(len(operationRegex))
                 a = matchArray(acceptSet, opRegex)
                 print('a done')
                 b = matchArray(rejectSet, opRegex)

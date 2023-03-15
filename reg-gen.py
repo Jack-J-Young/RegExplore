@@ -3,9 +3,9 @@ from RegExtra.RegexTree.toolset.toolSolver import userParetoSolve
 from regexParse import regexToAst       
 import RegExtra.RegexTree.regexTree as regexTree
 
-#regex = r".*"
+regex = r".*"
 #regex = r".*-.*-.*"
-regex = r".*[--O].*-.*"
+#regex = r".*[--O].*-.*"
 
 ast = regexToAst(regex)
 
@@ -117,9 +117,6 @@ accepts = [
 ]
 
 rejects = [
-    '^V8?GDILe%(#Kjt\t*VDdw}\'or!|k$1D\\\x0cu#A8ml@rW\x0b*{<JK<!\' \twsC?BiYF8=HGQ)vyn;VGhZ#`;jvl7+)}\r[!Ex8}<>PS`sQ$5,uGh"\tq-b1_IxIEXQ1ug-D]b_~p3Jqzw?6\'l1Uo<o[;\\`aZ#4ul~sY6uj8\rbN!Y<:7wnL\r #;N\t-=K21JT&xs-ysr/^E7A$B`+',
-    'x+.5@N[~lMtp<?c\x0c\\g6t|\'KmZ6\\\r8\'#TXT\r7zL:%gk@=i{1oGZcT%yCpu\\_`3J)w{\ro#TK*\\%p-1@ )X)[F;W^@N3}\r0\\U5Q"6*!7yVmS(9Z-[}@PNjsFGNtBHQ%#0@Zh*&Sq >8*aEo*-u|}s}95v1S]>j02=oQ3!J`b`m1/w#?]Y9V>$ 9\rE"rrhqw2s|hb,$uRAU=7[04>Uwj .A2~\tS,Oy-$v#G',
-    '6Q;\'\x0cjxY_M@y|g*l!Y36;m8-"xVOOk>va_iF ?kb\\%EbpZg0:PYW\'GpIK43yD7H&mryk\t823JR>!.O5|?.4YA)@Xffo vfdIouD\'I=\x0c$4:lt[pK-k7~ ^(s6n=Wl ?n(!5-UIsviwQ__v!L@:(,w$vMtvKdzC9vNMd(6t#@j%!~\r#PULzv9D[m[Ym\tYE|JE~]Bpv!<3t4B#'
 ]
 
 parent = userParetoSolve(accepts, rejects, parent, config)
