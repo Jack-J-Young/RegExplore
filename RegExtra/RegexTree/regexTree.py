@@ -104,6 +104,7 @@ def nodeToRegex(parentNode):
 # Check if string matches a regex
 def getMatchData(parentNode, string, pastPos = 0):
 
+    print(nodeToRegex(parentNode))
     # List node
     if parentNode['type'] == NodeType.LIST:
         output = [{
@@ -210,7 +211,14 @@ def getUnitMatches(pattern, string, startIndex = 0):
         return output
 
 def matchArray(stringArray, regexTree):
-    dataArray = [getMatchData(regexTree, i) for i in stringArray]
+    dataArray = []
+    
+    for i in stringArray:
+        print(i)
+        temp = getMatchData(regexTree, i)
+        dataArray.append(temp)
+        
+    # dataArray = [getMatchData(regexTree, i) for i in stringArray]
     return dataArray
 
 def getTotalPath(node):

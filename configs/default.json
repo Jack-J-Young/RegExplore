@@ -6,12 +6,67 @@
             "functionName" : "replaceMinWrap",
             "module" : "defaultFunctions",
             "inputTypes" : ["quant", "pattern"]
+        },
+        {
+            "name" : "inchWrapPattern",
+            "type" : "replace",
+            "functionName" : "inchWrapPattern",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["pattern"]
+        },
+        {
+            "name" : "setCategoryPattern",
+            "type" : "replace",
+            "functionName" : "setCategoryPattern",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["pattern"]
+        },
+        {
+            "name" : "bruteDelete",
+            "type" : "delete",
+            "functionName" : "bruteDelete",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["list"]
+        },
+        {
+            "name" : "bruteInsert",
+            "type" : "insert",
+            "functionName" : "bruteInsert",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["list"]
         }
     ],
     "operations" : [
         {
             "name" : "minWrap",
             "steps" : [
+                "minWrap"
+            ]
+        },
+        {
+            "name" : "inchWrapPattern",
+            "steps" : [
+                "inchWrapPattern"
+            ]
+        },
+        {
+            "name" : "setCategoryPattern",
+            "steps" : [
+                "setCategoryPattern"
+            ]
+        },
+        {
+            "name" : "bruteDelete",
+            "steps" : [
+                "setCategoryPattern",
+                "minWrap"
+            ]
+        },
+        {
+            "name" : "split",
+            "steps" : [
+                "bruteInsert",
+                "inchWrapPattern",
                 "minWrap"
             ]
         }

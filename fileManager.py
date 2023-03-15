@@ -27,7 +27,7 @@ def getListCompressability(stringList):
 
     return len(compressedString) / len(uncompressedString)
 
-def getRegexCompressability(regex, sampleSize = 500):
+def getRegexCompressability(regex, sampleSize = 100):
     return getListCompressability(genRegexStrings(regex, sampleSize))
 
 def getDensityScoreFromReference(referenceDensity, density):
