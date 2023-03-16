@@ -1,3 +1,4 @@
+import copy
 import sre_parse
 import re
 from RegExtra.RegexTree.PatternNode.createPatternNode import createPatternNode
@@ -143,27 +144,60 @@ def getMatchData(parentNode, string, pastPos = 0):
         #     'node' : parentNode
         # }
         output = getMatchData(parentNode['value'][0], string, pastPos)
-
+        
         for child in parentNode['value'][1:]:
+            if not output:
+                return None
             if len(output) == 0:
                 return None
             
-            positions = []
+            positions = dict()
             for data in output:
+                pos = []
                 if data['range'][0] == data['range'][1]:
-                    positions.append(data['range'][0])
-                positions += range(data['range'][0], data['range'][1])
+                    pos.append(data['range'][0])
+                pos += range(data['range'][0], data['range'][1])
                 
-            positions = list(dict.fromkeys(positions))
+                for p in pos:
+                    if p in positions:
+                        positions[p].append(data)
+                    else:
+                        positions[p] = [data]
 
             nextOutput = []
-            for matches in [getMatchData(child, string, i) for i in positions]:
-                if matches:
-                    nextOutput += matches
+            
+            t = []
+            for i in positions:
+                md = getMatchData(child, string, i)
+                if md:
+                    for d in md:
+                        d['previous'] = positions[i]
+                    t.append(md)
+            
+            #for matches in [getMatchData(child, string, i) for i in positions]:
+            for matches in t:
+                nextOutput += matches
             
             output = nextOutput
-    
-        return output
+        
+        if len(output) == 0:
+            return None
+        else:
+            temp = [[i] for i in output]
+            while 'previous' in temp[0][0]:
+                new = []
+                
+                for obj in temp:
+                    for node in obj[0]['previous']:
+                        new.append([node] + obj)
+                
+                temp = new
+            
+            return [{
+                'type' : NodeType.LIST,
+                'value' : i,
+                'node' : parentNode
+            } for i in temp]
 
     # Match Quant nodes IF the match has the right length, also gets all possible matches
     elif parentNode['type'] == NodeType.QUANT:
@@ -178,6 +212,7 @@ def getMatchData(parentNode, string, pastPos = 0):
                 if parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
                     output.append({
                         'type' : NodeType.QUANT,
+                        'startPos' : pastPos,
                         'range' : (parentNode['value']['lower'] + pastPos, len(string) - 1),
                         'child' : unfiltered,
                         'node' : parentNode
@@ -248,6 +283,49 @@ def getUnitMatches(pattern, string, startIndex = 0):
 
 def matchArray(stringArray, regexTree):
     return [getMatchData(regexTree, i) for i in stringArray]
+
+def simplifyRegexTree(regexTree):
+    match regexTree['type']:
+        case NodeType.LIST:
+            old = nodeToRegex(regexTree)
+            changed = False
+            
+            for index in reversed(range(len(regexTree['value']))):
+                if index + 1 < len(regexTree['value']):
+                    if ((regexTree['value'][index]['type'] == NodeType.QUANT and regexTree['value'][index + 1]['type'] == NodeType.QUANT) and (regexTree['value'][index]['value']['child']['type'] == NodeType.PATTERN and regexTree['value'][index + 1]['value']['child']['type'] == NodeType.PATTERN)) and nodeEqual(regexTree['value'][index]['value']['child'], regexTree['value'][index + 1]['value']['child']):
+                        addRange = (regexTree['value'][index + 1]['value']['lower'], regexTree['value'][index + 1]['value']['upper'])
+                        regexTree['value'][index]['value']['lower'] += addRange[0]
+                        if addRange[1] == QuantSpecials.MAX_REPEAT or regexTree['value'][index]['value']['upper'] == QuantSpecials.MAX_REPEAT:
+                            regexTree['value'][index]['value']['upper'] = QuantSpecials.MAX_REPEAT
+                        else:
+                            regexTree['value'][index]['value']['upper'] += addRange[1]
+                        
+                        del regexTree['value'][index + 1]
+                        changed = True
+                    
+                simplifyRegexTree(regexTree['value'][index])
+            
+            if changed:
+                for index in range(len(regexTree['value'])):
+                    regexTree['value'][index]['path'][-1] = index
+                
+                print(f'old: {old}, new: {nodeToRegex(regexTree)}')
+            
+        case NodeType.QUANT:
+            simplifyRegexTree(regexTree['value']['child'])
+
+def nodeEqual(a, b):
+    output = True
+    
+    if a['type'] != b['type']:
+        return False
+    
+    match a['type']:
+        case NodeType.PATTERN:
+            return a['value']['type'] == b['value']['type'] and a['value']['value'] == b['value']['value']
+        case _:
+            print('EQUALITY ERROR')
+    return a == b
 
 def getTotalPath(node):
     path = []

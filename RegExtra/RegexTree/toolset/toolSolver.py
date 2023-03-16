@@ -67,28 +67,20 @@ def getToolMatches(acceptSet, rejectSet, regexList, config):
         nextRegex = []
 
         for stepName in operationData['steps']:
-            print('step start')
             
             step = config['steps'][stepName]
             inputSet = set(step['inputTypes'])
-            print('colstart')
             
             operationCollection = []
             
             for opRegex in operationRegex:
-                print(len(operationRegex))
                 a = matchArray(acceptSet, opRegex)
-                print('a done')
                 b = matchArray(rejectSet, opRegex)
-                print('b done')
                 c = getNodeCollections(a, b)
-                print('c done')
                 operationCollection.append(c)
             first = True
-            print('colend')
                 
             for collectionIndex in reversed(range(len(operationCollection))):
-                print('collection start')
                 stepCollection = operationCollection[collectionIndex]
                 
                 root = stepCollection[0][0]
@@ -110,17 +102,11 @@ def getToolMatches(acceptSet, rejectSet, regexList, config):
                         nextRegex += insertStep(filteredCollections, step['function'])
                     case StepType.DELETE:
                         nextRegex += deleteStep(filteredCollections, step['function'])
-                print('collection done')
                 
                 del operationCollection[collectionIndex]
                 
-                print('done deleting')
-                
-            print('collections done')
             operationRegex = nextRegex
             nextRegex = []
-            
-            print('step done')
         
         map(removeModified, operationRegex)
         solutions += operationRegex

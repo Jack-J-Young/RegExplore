@@ -3,8 +3,8 @@ from RegExtra.RegexTree.toolset.toolSolver import userParetoSolve
 from regexParse import regexToAst       
 import RegExtra.RegexTree.regexTree as regexTree
 
-regex = r".*"
-#regex = r".*-.*-.*"
+#regex = r".*"
+regex = r".*-.*-.*"
 #regex = r".*[--O].*-.*"
 
 ast = regexToAst(regex)

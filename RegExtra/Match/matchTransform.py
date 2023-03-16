@@ -1,4 +1,4 @@
-from RegExtra.RegexTree.regexTree import NodeType, matchArray, nodeToRegex
+from RegExtra.RegexTree.regexTree import NodeType, simplifyRegexTree
 import copy
 
 # Search accept and reject trees and create a list of 4 tuples (original node, accept node, reject node, node path)
@@ -42,25 +42,28 @@ def getNodeCollections(acceptArray, rejectArray):
 def replaceStep(nodeCollections, replaceFunction):
     output = []
     for nodeCollection in nodeCollections:
-        print('replace start')
         newNodes = replaceFunction({
             'acceptMatches' : nodeCollection[1],
             'rejectMatches' : nodeCollection[2],
             'currentNode' : nodeCollection[0],
         })
-
-        print('replace done')
         
         for newNode in newNodes:
-            print(nodeToRegex(newNode))
             newNode['modified'] = True
+            match newNode['type']:
+                case NodeType.QUANT:
+                    newNode['value']['child']['modified'] = True
+                case NodeType.PATTERN:
+                    newNode['parent']['modified'] = True
+            newNode['modified']
             root = newNode
             while root['parent'] != None:
                 root = root['parent']
 
             output.append(root)
-            print('regex done')
     
+    for i in output:
+        simplifyRegexTree(i)
     return output
 
 def insertStep(nodeCollections, insertFunction):
@@ -92,6 +95,8 @@ def insertStep(nodeCollections, insertFunction):
 
             output.append(root)
     
+    for i in output:
+        simplifyRegexTree(i)
     return output
 
 def deleteStep(nodeCollections, replaceFunction):
@@ -119,6 +124,8 @@ def deleteStep(nodeCollections, replaceFunction):
 
             output.append(root)
     
+    for i in output:
+        simplifyRegexTree(i)
     return output
 
 def getAll(matchData):
@@ -130,7 +137,7 @@ def getAll(matchData):
         for node in currentNodes:
             match node['type']:
                 case NodeType.LIST:
-                    nextNodes += node['children']
+                    nextNodes += node['value']
                 case NodeType.QUANT:
                     nextNodes.append(node['child'])
             output.append(node)

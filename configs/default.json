@@ -34,19 +34,35 @@
             "functionName" : "bruteInsert",
             "module" : "defaultFunctions",
             "inputTypes" : ["list"]
+        },
+        {
+            "name" : "inchCategoryPattern",
+            "type" : "replace",
+            "functionName" : "inchCategoryPattern",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["pattern"]
         }
     ],
     "operations" : [
         {
             "name" : "minWrap",
             "steps" : [
+                "minWrap",
                 "minWrap"
             ]
         },
         {
             "name" : "inchWrapPattern",
             "steps" : [
-                "inchWrapPattern"
+                "inchWrapPattern",
+                "minWrap"
+            ]
+        },
+        {
+            "name" : "inchCategoryPattern",
+            "steps" : [
+                "inchCategoryPattern",
+                "minWrap"
             ]
         },
         {
@@ -66,7 +82,6 @@
             "name" : "split",
             "steps" : [
                 "bruteInsert",
-                "inchWrapPattern",
                 "minWrap"
             ]
         }
