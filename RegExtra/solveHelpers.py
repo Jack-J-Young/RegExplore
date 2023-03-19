@@ -1,4 +1,3 @@
-from itertools import permutations
 
 def getOrderedPerms(startPos, size):
     output = []

@@ -16,19 +16,19 @@ def genRegexStrings(regex, size):
         output.append(rs.xeger(regex))
     return output
 
-def getListCompressability(stringList):
-    agregate = ""
+def getListCompressibility(stringList):
+    aggregate = ""
     for string in stringList:
-        agregate += string + '\n'
+        aggregate += string + '\n'
     
-    uncompressedString = str.encode(agregate)
+    uncompressedString = str.encode(aggregate)
 
     compressedString = compressBytes(uncompressedString)
 
     return len(compressedString) / len(uncompressedString)
 
-def getRegexCompressability(regex, sampleSize = 100):
-    return getListCompressability(genRegexStrings(regex, sampleSize))
+def getRegexCompressibility(regex, sampleSize = 100):
+    return getListCompressibility(genRegexStrings(regex, sampleSize))
 
 def getDensityScoreFromReference(referenceDensity, density):
     if density > referenceDensity:

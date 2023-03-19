@@ -6,7 +6,7 @@ from RegExtra.RegexTree.PatternNode.PatternEnums import CategoryType, PatternTyp
 from RegExtra.RegexTree.QuantNode.QuantEnums import QuantSpecials
 from RegExtra.RegexTree.QuantNode.createQuantNode import createQuantNode
 from RegExtra.RegexTree.nodeEnums import NodeType
-from solveHelpers import getOrderedPerms
+from RegExtra.solveHelpers import getOrderedPerms
 import json
 
 # Turns ast into regex tree object
@@ -135,7 +135,24 @@ def nodeToRegex(parentNode):
     return ''
 
 # Check if string matches a regex
-def getMatchData(parentNode, string, pastPos = 0):
+def getMatchData(parentNode, string, pastPos = 0, preCalc = []):
+    
+    sub = ''
+    match parentNode['type']:
+        case NodeType.LIST:
+            sub = 'L:'
+        case NodeType.QUANT:
+            sub = 'Q:'
+        case NodeType.PATTERN:
+            sub = 'P:'
+    
+    preCalcName = sub + nodeToRegex(parentNode)
+    
+    preCalcFiltered = list(filter(lambda x : x[0] == string[pastPos:] and x[1] == preCalcName, preCalc))
+    
+    if len(preCalcFiltered) > 0:
+        return preCalcFiltered[0][2]
+    
     # List node
     if parentNode['type'] == NodeType.LIST:
         # {
@@ -143,87 +160,154 @@ def getMatchData(parentNode, string, pastPos = 0):
         #     'value' : [],
         #     'node' : parentNode
         # }
-        output = getMatchData(parentNode['value'][0], string, pastPos)
+
+        firstMatch = getMatchData(parentNode['value'][0], string, pastPos, preCalc)
+        if firstMatch:
+            currentMatches = [[i] for i in firstMatch]
+        else:
+            return None
         
         for child in parentNode['value'][1:]:
-            if not output:
-                return None
-            if len(output) == 0:
-                return None
+            nextMatches = []
             
-            positions = dict()
-            for data in output:
-                pos = []
-                if data['range'][0] == data['range'][1]:
-                    pos.append(data['range'][0])
-                pos += range(data['range'][0], data['range'][1])
+            for matchListIndex in reversed(range(len(currentMatches))):
+                changed = False
+                matchList = currentMatches[matchListIndex]
                 
-                for p in pos:
-                    if p in positions:
-                        positions[p].append(data)
-                    else:
-                        positions[p] = [data]
-
-            nextOutput = []
-            
-            t = []
-            for i in positions:
-                md = getMatchData(child, string, i)
-                if md:
-                    for d in md:
-                        d['previous'] = positions[i]
-                    t.append(md)
-            
-            #for matches in [getMatchData(child, string, i) for i in positions]:
-            for matches in t:
-                nextOutput += matches
-            
-            output = nextOutput
+                match = matchList[-1]
+                matchData = getMatchData(child, string, match['endPos'], preCalc)
+                if matchData:
+                    for i in range(len(matchData)):
+                        mdat = matchData[i]
+                        if mdat:
+                            changed = True
+                            matchList.append(mdat)
+                        else:
+                            print(0)
+                
+                if not changed:
+                    del currentMatches[matchListIndex]
+                # nextMatches += [[match + i] for i in getMatchData(child, string, match['endPos'], preCalc)]
+                
+            # currentMatches = nextMatches
         
-        if len(output) == 0:
-            return None
-        else:
-            temp = [[i] for i in output]
-            while 'previous' in temp[0][0]:
-                new = []
-                
-                for obj in temp:
-                    for node in obj[0]['previous']:
-                        new.append([node] + obj)
-                
-                temp = new
+        for i in reversed(range(len(currentMatches))):
+            if currentMatches[i][-1]['endPos'] != len(string):
+                del currentMatches[i]
+        
+        output = [{
+            'type' : NodeType.LIST,
+            'value' : i,
+            'node' : parentNode
+        } for i in currentMatches]
+        
+        preCalc.append((string[pastPos:], preCalcName, output))
+        
+        return output
             
-            return [{
-                'type' : NodeType.LIST,
-                'value' : i,
-                'node' : parentNode
-            } for i in temp]
+        # output = getMatchData(parentNode['value'][0], string, pastPos, preCalc)
+        
+        # for child in parentNode['value'][1:]:
+        #     if not output:
+        #         return None
+        #     if len(output) == 0:
+        #         return None
+            
+        #     positions = dict()
+        #     for data in output:
+        #         pos = []
+        #         if data['range'][0] == data['range'][1]:
+        #             pos.append(data['range'][0])
+        #         pos += range(data['range'][0], data['range'][1] + 1)
+                
+        #         for p in pos:
+        #             if p in positions:
+        #                 positions[p].append(data)
+        #             else:
+        #                 positions[p] = [data]
+
+        #     nextOutput = []
+            
+        #     t = []
+        #     for i in positions:
+        #         md = getMatchData(child, string, i, preCalc)
+        #         if md:
+        #             for d in md:
+        #                 d['previous'] = positions[i]
+        #             t.append(md)
+            
+        #     #for matches in [getMatchData(child, string, i) for i in positions]:
+        #     for matches in t:
+        #         nextOutput += matches
+            
+        #     output = nextOutput
+        
+        # if output == None or len(output) == 0:
+        #     return None
+        # else:
+        #     temp = [[i] for i in output]
+        #     while 'previous' in temp[0][0]:
+        #         new = []
+                
+        #         for obj in temp:
+        #             for node in obj[0]['previous']:
+        #                 new.append([node] + obj)
+                
+        #         temp = new
+            
+        #     for set in temp:
+        #         for index in range(len(set)):
+        #             node = set[index]
+                    
+        #             if index >= len(set):
+        #                 if node['child']['type'] == NodeType.PATTERN:
+        #                     node['child']['strings'] = list(filter(lambda x : len(x) == set[index + 1]['startPos'] - set[index]['startPos'], node['child']['strings']))
+        #             else:
+        #                 if node['child']['type'] == NodeType.PATTERN:
+        #                     node['child']['strings'] = list(filter(lambda x : len(x) == len(string) - 1 - set[index]['startPos'], node['child']['strings']))
+            
+        #     solutions = [{
+        #         'type' : NodeType.LIST,
+        #         'value' : i,
+        #         'node' : parentNode
+        #     } for i in temp]
+            
+        #     preCalc.append((string[pastPos:], preCalcName, solutions))
+            
+        #     return solutions
 
     # Match Quant nodes IF the match has the right length, also gets all possible matches
     elif parentNode['type'] == NodeType.QUANT:
         # Get all child matches
-        unfilteredList = getMatchData(parentNode['value']['child'], string, pastPos)
+        unfilteredList = getMatchData(parentNode['value']['child'], string, pastPos, preCalc)
         
         if unfilteredList:
             output = []
             
-            for unfiltered in unfilteredList:  
-                # Check the length of each match and add node about quant sizes
-                if parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
-                    output.append({
+            for unfiltered in unfilteredList:
+                if len(unfiltered['string']) >= parentNode['value']['lower'] and (parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT or len(unfiltered['string']) <= parentNode['value']['upper']):
+                    # Check the length of each match and add node about quant sizes
+                    if parentNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
+                        output.append({
+                            'type' : NodeType.QUANT,
+                            'startPos' : pastPos,
+                            'range' : (parentNode['value']['lower'] + pastPos, len(string) - 1),
+                            'endPos' : pastPos + len(unfiltered['string']),
+                            'child' : unfiltered,
+                            'node' : parentNode
+                        })
+                    else:
+                        output.append({
                         'type' : NodeType.QUANT,
                         'startPos' : pastPos,
-                        'range' : (parentNode['value']['lower'] + pastPos, len(string) - 1),
+                        'range' : (parentNode['value']['lower'] + pastPos, min(parentNode['value']['upper'] + pastPos, len(string) - 1)),
+                        'endPos' : pastPos + len(unfiltered['string']),
                         'child' : unfiltered,
                         'node' : parentNode
                     })
-                else:
-                    output.append({
-                    'type' : NodeType.QUANT,
-                    'range' : (parentNode['value']['lower'] + pastPos, min(parentNode['value']['upper'] + pastPos, len(string) - 1)),
-                    'child' : unfiltered,
-                    'node' : parentNode
-                })
+            
+            preCalc.append((string[pastPos:], preCalcName, output))
+            
             return output
         return None
 
@@ -238,16 +322,18 @@ def getMatchData(parentNode, string, pastPos = 0):
             
             strings = []
             
-            if parentNode['parent']['value']['lower'] == 0:
-                strings = ['']
-            for index in range(span[1] - span[0]):
-                strings.append(string[span[0] + pastPos : index + span[0] + pastPos + 1])
+            for index in range(parentNode['parent']['value']['lower'], span[1] + 1):
+                strings.append(string[pastPos : index + pastPos])
             
-            return [{
+            solutions = [{
                     'type' : NodeType.PATTERN,
-                    'strings' : strings,
+                    'string' : string,
                     'node' : parentNode
-                }]
+                } for string in strings]
+            
+            preCalc.append((string[pastPos:], preCalcName, solutions))
+            
+            return solutions
         else:
             return None
 
@@ -281,8 +367,8 @@ def getUnitMatches(pattern, string, startIndex = 0):
             })
         return output
 
-def matchArray(stringArray, regexTree):
-    return [getMatchData(regexTree, i) for i in stringArray]
+def matchArray(stringArray, regexTree, preCalc = []):
+    return [getMatchData(regexTree, i, preCalc=preCalc) for i in stringArray]
 
 def simplifyRegexTree(regexTree):
     match regexTree['type']:

@@ -1,16 +1,16 @@
 {
     "steps" : [
         {
-            "name" : "minWrapQuant",
+            "name" : "minWrap",
             "type" : "replace",
             "functionName" : "replaceMinWrap",
             "module" : "defaultFunctions",
-            "inputTypes" : ["quant"]
+            "inputTypes" : ["quant", "pattern"]
         },
         {
-            "name" : "minWrapPattern",
+            "name" : "inchWrapPattern",
             "type" : "replace",
-            "functionName" : "replaceMinWrap",
+            "functionName" : "inchWrapPattern",
             "module" : "defaultFunctions",
             "inputTypes" : ["pattern"]
         },
@@ -41,44 +41,48 @@
             "functionName" : "inchCategoryPattern",
             "module" : "defaultFunctions",
             "inputTypes" : ["pattern"]
-        },
-        {
-            "name" : "quantsToKeleene",
-            "type" : "replace",
-            "functionName" : "quantsToKeleene",
-            "module" : "defaultFunctions",
-            "inputTypes" : ["quant"]
         }
     ],
     "operations" : [
         {
             "name" : "minWrap",
             "steps" : [
-                "minWrapPattern",
-                "minWrapQuant"
+                "minWrap",
+                "minWrap"
+            ]
+        },
+        {
+            "name" : "inchWrapPattern",
+            "steps" : [
+                "inchWrapPattern",
+                "minWrap"
             ]
         },
         {
             "name" : "inchCategoryPattern",
             "steps" : [
                 "inchCategoryPattern",
-                "minWrapQuant"
+                "minWrap"
+            ]
+        },
+        {
+            "name" : "setCategoryPattern",
+            "steps" : [
+                "setCategoryPattern"
             ]
         },
         {
             "name" : "bruteDelete",
             "steps" : [
-                "bruteDelete",
-                "minWrapPattern"
+                "setCategoryPattern",
+                "minWrap"
             ]
         },
         {
             "name" : "split",
             "steps" : [
                 "bruteInsert",
-                "setCategoryPattern",
-                "quantsToKeleene",
-                "minWrapQuant"
+                "minWrap"
             ]
         }
     ]

@@ -7,15 +7,22 @@ from RegExtra.RegexTree.regexTree import nodeEqual
 
 def replaceMinWrap(properties):
     if properties['currentNode']['type'] == NodeType.QUANT:
-        acceptSet = [len(item) for sublist in properties['acceptMatches'] for item in sublist['child']['strings']]
+        acceptStrings = [i['child']['string'] for i in properties['acceptMatches']]
+        acceptSet = [len(i['child']['string']) for i in properties['acceptMatches']]
 
         newNode = copy.deepcopy(properties['currentNode'])
         if len(acceptSet) > 0:
             newNode['value']['lower'] = min(acceptSet)
             newNode['value']['upper'] = max(acceptSet)
-        return [newNode]
+            
+        if not newNode['value']['upper'] == 0:
+            return [newNode]
+        return []
     else:
-        acceptSet = [item for sublist in properties['acceptMatches'] for item in sublist['strings']]
+        if properties['currentNode']['parent']['value']['lower'] == 1 and properties['currentNode']['parent']['value']['upper'] == 1:
+            print(0)
+        
+        acceptSet = [i['string'] for i in properties['acceptMatches']]
 
         # Get all characters from list of accept strings
         charSet = list(dict.fromkeys([item for sublist in [c for c in acceptSet] for item in sublist]))
@@ -35,11 +42,13 @@ def replaceMinWrap(properties):
                     'value' : (ord(min(charSet)), ord(max(charSet))),
                     'regex' : f'[{min(charSet)}-{max(charSet)}]'
                 }
-
-        return [newNode]
+        if newNode['value']['regex'] != '':
+            return [newNode]
+        return []
 
 def inchWrapPattern(properties):
-    acceptSet = [item for sublist in properties['acceptMatches'] for item in sublist['strings']]
+    
+    acceptSet = [i['string'] for i in properties['acceptMatches']]
 
     parent = copy.deepcopy(properties['currentNode']['parent'])
 
@@ -70,13 +79,14 @@ def inchWrapPattern(properties):
                 'value' : (ord(min(cumulativeSet)), ord(max(cumulativeSet))),
                 'regex' : f'[{min(cumulativeSet)}-{max(cumulativeSet)}]'
             }
-
-        output.append(newNode)
+            
+        if newNode['value']['regex'] != '':
+            output.append(newNode)
     
     return output
 
 def inchCategoryPattern(properties):
-    acceptSet = [item for sublist in properties['acceptMatches'] for item in sublist['strings']]
+    acceptSet = [i['string'] for i in properties['acceptMatches']]
 
     parent = copy.deepcopy(properties['currentNode']['parent'])
 
@@ -116,7 +126,7 @@ def inchCategoryPattern(properties):
     return output
 
 def setCategoryPattern(properties):
-    acceptSet = [item for sublist in properties['acceptMatches'] for item in sublist['strings']]
+    acceptSet = [i['string'] for i in properties['acceptMatches']]
     
     charSet = [item for sublist in [c for c in acceptSet] for item in sublist]
 
@@ -142,7 +152,10 @@ def setCategoryPattern(properties):
     return output
 
 def bruteDelete(properties):
-    return range(len(properties['currentNode']['value']))
+    if len(properties['currentNode']['value']) > 1:
+        return range(len(properties['currentNode']['value']))
+    else:
+        return []
 
 def redundancyDelete(properties):
     output = []
@@ -164,14 +177,25 @@ def redundancyDelete(properties):
     
     return output
 
+def repeatInsert(properties):
+    output = []
+    
+    for index in range(len(properties['currentNode']['value']) - 1):
+        currentNode = properties['currentNode']['value'][index]
+        nextNode = properties['currentNode']['value'][index + 1]
+        
+        output.append([(index, copy.deepcopy(nextNode)),(index, copy.deepcopy(currentNode))])
+    
+    return output
+
 def bruteInsert(properties):
-    indices = range(len(properties['currentNode']['value']))
+    indices = range(len(properties['currentNode']['value']) + 1)
 
     quant = {
         'type' : NodeType.QUANT,
         'value' : {
-            'lower' : 0,
-            'upper' : QuantSpecials.MAX_REPEAT,
+            'lower' : 1,
+            'upper' : 1,
             'child' : None
         },
         'parent' : None,
@@ -191,7 +215,9 @@ def bruteInsert(properties):
 
     output = []
     for i in indices:
-        currentNodeTest = (properties['currentNode']['value'][i]['value']['lower'] == 0 and properties['currentNode']['value'][i]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value'][i]['value']['child']['value']['value'] == CategoryType.ANY
+        currentNodeTest = False
+        if i < len(properties['currentNode']['value']):
+            currentNodeTest = (properties['currentNode']['value'][i]['value']['lower'] == 0 and properties['currentNode']['value'][i]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value'][i]['value']['child']['value']['value'] == CategoryType.ANY
         previousNodeTest = False
         if i - 1 >= 0:
             previousNodeTest = (properties['currentNode']['value'][i - 1]['value']['lower'] == 0 and properties['currentNode']['value'][i - 1]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value'][i - 1]['value']['child']['value']['value'] == CategoryType.ANY
@@ -200,6 +226,15 @@ def bruteInsert(properties):
             previousNodeTest = (properties['currentNode']['value'][i + 1]['value']['lower'] == 0 and properties['currentNode']['value'][i + 1]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value'][i + 1]['value']['child']['value']['value'] == CategoryType.ANY
         
         if not (currentNodeTest or previousNodeTest or nextNodeTest):
-            output.append((i, copy.deepcopy(quant)))
+            output.append([(i, copy.deepcopy(quant))])
     return output
 
+def quantsToKeleene(properties):
+    lengthSum = len(properties['currentNode']['parent']['value'])
+    
+    newNode = copy.deepcopy(properties['currentNode'])
+    newNode['value']['lower'] = 0
+    # newNode['value']['upper'] = lengthSum
+    newNode['value']['upper'] = QuantSpecials.MAX_REPEAT
+    
+    return [newNode]

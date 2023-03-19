@@ -48,16 +48,16 @@
             "functionName" : "quantsToKeleene",
             "module" : "defaultFunctions",
             "inputTypes" : ["quant"]
+        },
+        {
+            "name" : "repeatInsert",
+            "type" : "insert",
+            "functionName" : "repeatInsert",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["list"]
         }
     ],
     "operations" : [
-        {
-            "name" : "minWrap",
-            "steps" : [
-                "minWrapPattern",
-                "minWrapQuant"
-            ]
-        },
         {
             "name" : "inchCategoryPattern",
             "steps" : [
@@ -73,12 +73,9 @@
             ]
         },
         {
-            "name" : "split",
+            "name" : "repeatInsert",
             "steps" : [
-                "bruteInsert",
-                "setCategoryPattern",
-                "quantsToKeleene",
-                "minWrapQuant"
+                "repeatInsert"
             ]
         }
     ]

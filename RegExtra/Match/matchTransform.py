@@ -69,34 +69,35 @@ def replaceStep(nodeCollections, replaceFunction):
 def insertStep(nodeCollections, insertFunction):
     output = []
     for nodeCollection in nodeCollections:
-        newNodeTuples = insertFunction({
+        newNodeTupleLists = insertFunction({
             'acceptMatches' : nodeCollection[1],
             'rejectMatches' : nodeCollection[2],
             'currentNode' : nodeCollection[0],
         })
 
-        for newNodeTuple in newNodeTuples:
-            newNode = copy.deepcopy(nodeCollection[0])
-            
-            newNode['value'].insert(newNodeTuple[0], newNodeTuple[1])
+        if newNodeTupleLists:
+            for newNodeTupleList in newNodeTupleLists:
+                newNode = copy.deepcopy(nodeCollection[0])
+                
+                for newNodeTuple in newNodeTupleList:
+                    newNode['value'].insert(newNodeTuple[0], newNodeTuple[1])
 
-            newNode['modified'] = True
-            newNode['value'][newNodeTuple[0]]['modified'] = True
+                    # newNode['modified'] = True
+                    newNode['value'][newNodeTuple[0]]['modified'] = True
+                    newNode['value'][newNodeTuple[0]]['value']['child']['modified'] = True
 
-            newNodeTuple[1]['parent'] = newNode
-            newNodeTuple[1]['path'] = ['value', 0]
+                    newNodeTuple[1]['parent'] = newNode
+                    newNodeTuple[1]['path'] = ['value', 0]
 
-            for index in range(len(newNode['value'])):
-                newNode['value'][index]['path'][-1] = index
+                for index in range(len(newNode['value'])):
+                    newNode['value'][index]['path'][-1] = index
 
-            root = newNode
-            while root['parent'] != None:
-                root = root['parent']
+                root = newNode
+                while root['parent'] != None:
+                    root = root['parent']
 
-            output.append(root)
+                output.append(root)
     
-    for i in output:
-        simplifyRegexTree(i)
     return output
 
 def deleteStep(nodeCollections, replaceFunction):
