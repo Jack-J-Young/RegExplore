@@ -6,11 +6,9 @@ def createPatternNode(rawData, parent, path):
     node = {'type' : NodeType.PATTERN, 'parent' : parent, 'path' : path}
     
     charData = rawData[0]
-    if len(rawData) > 1:
-        print('ERROR CHECK THIS IN CODE')
     if charData[0] == sre_parse.CATEGORY:
         regex = ''
-        value = CategoryType.UNKOWN
+        value = CategoryType.UNKNOWN
         if charData[1] == sre_parse.CATEGORY_DIGIT:
             regex = r'\d'
             value = CategoryType.DIGIT
@@ -27,11 +25,29 @@ def createPatternNode(rawData, parent, path):
         node['value'] = {
             'type' : PatternType.RANGE,
             'value' : (charData[1][0], charData[1][1]),
-            'regex' : f'[{chr(charData[1][0])}-{chr(charData[1][1])}]'
+            'regex' : f'[{escapeChars(charData[1][0])}-{escapeChars(charData[1][1])}]'
         }
     else:
-        node['type'] = NodeType.UNKOWN
+        node['type'] = NodeType.UNKNOWN
         node['value'] = None
         return node
-    
+
     return node
+
+def escapeChars(char):
+    if set([chr(char)]) <= set('.^$*+?()[{\-]|'):
+        return f'\{chr(char)}'
+    return chr(char)
+
+# def parsePatternValue(rawData):    
+#     match rawData[0]:
+#         case sre_parse.CATEGORY:
+#             match rawData[1]:
+#                 case sre_parse.CATEGORY_DIGIT:
+#                     return (CategoryType.DIGIT, r'\d')
+#                 case sre_parse.CATEGORY_WORD:
+#                     return (CategoryType.WORD, r'\w')
+#         case sre_parse.LITERAL:
+#             return (rawData[1], chr(rawData[1]))
+#         case sre_parse.RANGE:
+#             return ()

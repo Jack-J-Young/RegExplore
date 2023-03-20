@@ -1,7 +1,7 @@
 import copy
 import oapackage
 from RegExtra.Match.matchTransform import deleteStep, getNodeCollections, insertStep, replaceStep
-from RegExtra.RegexTree.nodeEnums import NodeType
+from RegExtra.RegexTree.nodeEnums import ListType, NodeType
 from RegExtra.RegexTree.regexTree import matchArray, nodeToRegex, regexToNode, simplifyRegexTree
 from RegExtra.RegexTree.toolset.toolCreator import StepType
 import re
@@ -19,7 +19,7 @@ def removeModified(node):
         for node in currentNodes:
             match node['type']:
                 case NodeType.LIST:
-                    nextNodes += node['value']
+                    nextNodes += node['value']['children']
                 case NodeType.QUANT:
                     nextNodes.append(node['value']['child'])
             node.pop("modified", None)
@@ -36,7 +36,7 @@ def checkValidity(node):
         for node in currentNodes:
             match node['type']:
                 case NodeType.LIST:
-                    nextNodes += node['value']
+                    nextNodes += node['value']['children']
                 case NodeType.QUANT:
                     nextNodes.append(node['value']['child'])
             if node['parent'] != None:
@@ -56,12 +56,15 @@ def getToolMatches(acceptSet, rejectSet, regexList, config):
         if regex['type'] != NodeType.LIST:
             regex = {
                 'type' : NodeType.LIST,
-                'value' : [regex],
+                'value' : {
+                    'type' : ListType.NORMAL,
+                    'children' : [regex]
+                },
                 'parent' : None,
                 'path' : []
             }
-            regex['value'][0]['parent'] = regex
-            regex['value'][0]['path'] = ['value', 0]
+            regex['value']['children'][0]['parent'] = regex
+            regex['value']['children'][0]['path'] = ['value', 0]
 
     solutions = []
 
@@ -180,7 +183,6 @@ def getDenseSolutions(acceptStrings, rejectStrings, matches):
         # Accept %
         acceptCount = 0
         for string in acceptStrings:
-            if re.match(f'\A{regex}\Z', string):
                 acceptCount += 1
         
         # Reject %
@@ -234,10 +236,14 @@ def userCreativeTransform(acceptStrings, rejectStrings, config):
     
     currentRegex = [regexToNode(regexToAst(i[1:-1])) for i in rexpy.results.rex]
     previousRegex = None
-
+    
     while len(currentRegex) > 0:
         matches = getToolMatches(acceptStrings, rejectStrings, currentRegex, config)
 
+        if not matches:
+            for r in currentRegex:
+                print(nodeToRegex(r))
+                
         paretoSolutions = getDenseSolutions(acceptStrings, rejectStrings, matches)
         paretoScoring = [0 for _ in paretoSolutions]
         
@@ -265,7 +271,7 @@ def userCreativeTransform(acceptStrings, rejectStrings, config):
             acceptStrings = []
             for i in indices:
                 paretoScoring[int(i/perSolution)] += 1
-                acceptStrings += totalGenerated[i]
+                acceptStrings.append(totalGenerated[i])
             
             indices.sort()
 
@@ -279,10 +285,11 @@ def userCreativeTransform(acceptStrings, rejectStrings, config):
             if paretoScoring[scoreIndex] > maxScore:
                 maxScore = paretoScoring[scoreIndex]
         
-        currentRegex = []
-        for index in range(len(paretoScoring)):
-            if paretoScoring[index] == maxScore:
-                currentRegex.append(paretoSolutions[index])
+        if maxScore != 0:
+            currentRegex = []
+            for index in range(len(paretoScoring)):
+                if paretoScoring[index] == maxScore:
+                    currentRegex.append(paretoSolutions[index])
     
     return currentRegex
 

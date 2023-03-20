@@ -7,8 +7,8 @@ from RegExtra.RegexTree.regexTree import nodeEqual
 
 def replaceMinWrap(properties):
     if properties['currentNode']['type'] == NodeType.QUANT:
-        acceptStrings = [i['child']['string'] for i in properties['acceptMatches']]
-        acceptSet = [len(i['child']['string']) for i in properties['acceptMatches']]
+        childrenSets = [i['children'] for i in properties['acceptMatches']]
+        acceptSet = [len(''.join(node['string'] for node in cSet)) for cSet in childrenSets]
 
         newNode = copy.deepcopy(properties['currentNode'])
         if len(acceptSet) > 0:
@@ -107,7 +107,7 @@ def inchCategoryPattern(properties):
 
         validCategories = []
         for category in CategoryType:
-            if category != CategoryType.UNKOWN:
+            if category != CategoryType.UNKNOWN:
                 categorySet = categoryToSet(category)
 
                 if set(cumulativeSet).issubset(categorySet):
@@ -132,7 +132,7 @@ def setCategoryPattern(properties):
 
     validCategories = []
     for category in CategoryType:
-        if category != CategoryType.UNKOWN:
+        if category != CategoryType.UNKNOWN:
             categorySet = categoryToSet(category)
 
             if set(charSet).issubset(categorySet):
@@ -180,16 +180,16 @@ def redundancyDelete(properties):
 def repeatInsert(properties):
     output = []
     
-    for index in range(len(properties['currentNode']['value']) - 1):
-        currentNode = properties['currentNode']['value'][index]
-        nextNode = properties['currentNode']['value'][index + 1]
+    for index in range(len(properties['currentNode']['value']['children']) - 1):
+        currentNode = properties['currentNode']['value']['children'][index]
+        nextNode = properties['currentNode']['value']['children'][index + 1]
         
         output.append([(index, copy.deepcopy(nextNode)),(index, copy.deepcopy(currentNode))])
     
     return output
 
 def bruteInsert(properties):
-    indices = range(len(properties['currentNode']['value']) + 1)
+    indices = range(len(properties['currentNode']['value']['children']) + 1)
 
     quant = {
         'type' : NodeType.QUANT,
@@ -216,14 +216,14 @@ def bruteInsert(properties):
     output = []
     for i in indices:
         currentNodeTest = False
-        if i < len(properties['currentNode']['value']):
-            currentNodeTest = (properties['currentNode']['value'][i]['value']['lower'] == 0 and properties['currentNode']['value'][i]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value'][i]['value']['child']['value']['value'] == CategoryType.ANY
+        if i < len(properties['currentNode']['value']['children']):
+            currentNodeTest = (properties['currentNode']['value']['children'][i]['value']['lower'] == 0 and properties['currentNode']['value']['children'][i]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value']['children'][i]['value']['child']['value']['value'] == CategoryType.ANY
         previousNodeTest = False
         if i - 1 >= 0:
-            previousNodeTest = (properties['currentNode']['value'][i - 1]['value']['lower'] == 0 and properties['currentNode']['value'][i - 1]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value'][i - 1]['value']['child']['value']['value'] == CategoryType.ANY
+            previousNodeTest = (properties['currentNode']['value']['children'][i - 1]['value']['lower'] == 0 and properties['currentNode']['value']['children'][i - 1]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value']['children'][i - 1]['value']['child']['value']['value'] == CategoryType.ANY
         nextNodeTest = False
         if i + 1 < len(properties['currentNode']['value']):
-            previousNodeTest = (properties['currentNode']['value'][i + 1]['value']['lower'] == 0 and properties['currentNode']['value'][i + 1]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value'][i + 1]['value']['child']['value']['value'] == CategoryType.ANY
+            previousNodeTest = (properties['currentNode']['value']['children'][i + 1]['value']['lower'] == 0 and properties['currentNode']['value']['children'][i + 1]['value']['upper'] == QuantSpecials.MAX_REPEAT) and properties['currentNode']['value']['children'][i + 1]['value']['child']['value']['value'] == CategoryType.ANY
         
         if not (currentNodeTest or previousNodeTest or nextNodeTest):
             output.append([(i, copy.deepcopy(quant))])

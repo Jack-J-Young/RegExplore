@@ -80,17 +80,17 @@ def insertStep(nodeCollections, insertFunction):
                 newNode = copy.deepcopy(nodeCollection[0])
                 
                 for newNodeTuple in newNodeTupleList:
-                    newNode['value'].insert(newNodeTuple[0], newNodeTuple[1])
+                    newNode['value']['children'].insert(newNodeTuple[0], newNodeTuple[1])
 
                     # newNode['modified'] = True
-                    newNode['value'][newNodeTuple[0]]['modified'] = True
-                    newNode['value'][newNodeTuple[0]]['value']['child']['modified'] = True
+                    newNode['value']['children'][newNodeTuple[0]]['modified'] = True
+                    newNode['value']['children'][newNodeTuple[0]]['value']['child']['modified'] = True
 
                     newNodeTuple[1]['parent'] = newNode
-                    newNodeTuple[1]['path'] = ['value', 0]
+                    newNodeTuple[1]['path'] = ['value', 'children', 0]
 
-                for index in range(len(newNode['value'])):
-                    newNode['value'][index]['path'][-1] = index
+                for index in range(len(newNode['value']['children'])):
+                    newNode['value']['children'][index]['path'][-1] = index
 
                 root = newNode
                 while root['parent'] != None:
@@ -114,10 +114,10 @@ def deleteStep(nodeCollections, replaceFunction):
 
             newNode['modified'] = True
             
-            del newNode['value'][removeIndex]
+            del newNode['value']['children'][removeIndex]
 
-            for index in range(len(newNode['value'])):
-                newNode['value'][index]['path'][-1] = index
+            for index in range(len(newNode['value']['children'])):
+                newNode['value']['children'][index]['path'][-1] = index
 
             root = newNode
             while root['parent'] != None:
@@ -140,7 +140,7 @@ def getAll(matchData):
                 case NodeType.LIST:
                     nextNodes += node['value']
                 case NodeType.QUANT:
-                    nextNodes.append(node['child'])
+                    nextNodes += node['children']
             output.append(node)
         currentNodes = nextNodes
         nextNodes = []

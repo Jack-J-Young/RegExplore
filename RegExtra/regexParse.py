@@ -2,7 +2,8 @@ import sre_parse
 from anytree import Node, RenderTree
 
 def regexToAst(regex):
-    return sre_parse.parse(regex)
+    parse = sre_parse.parse(regex)
+    return parse
 
 # def tupleToNode(tuple):
 #     print("test")

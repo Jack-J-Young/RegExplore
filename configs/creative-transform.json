@@ -59,13 +59,6 @@
     ],
     "operations" : [
         {
-            "name" : "inchCategoryPattern",
-            "steps" : [
-                "inchCategoryPattern",
-                "minWrapQuant"
-            ]
-        },
-        {
             "name" : "bruteDelete",
             "steps" : [
                 "bruteDelete",
