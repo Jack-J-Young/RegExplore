@@ -228,7 +228,10 @@ def firstParetoSolve(acceptStrings, rejectStrings, regex, config):
     
     return currentRegex
 
-def userCreativeTransform(acceptStrings, rejectStrings, config):
+def userCreativeTransform(config):
+    acceptStrings = config['accepts']
+    rejectStrings = config['rejects']
+    
     rexpy = tdda.rexpy.Extractor(acceptStrings)
     rexpy.extract()
     

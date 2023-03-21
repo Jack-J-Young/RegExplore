@@ -48,7 +48,16 @@ def loadConfig(path = './configs/default.json'):
     for operation in config['operations']:
         operations[operation['name']] = operation
 
+    accepts = []
+    rejects = []
+    with open(config['acceptFile']) as acceptFile:
+        accepts = [i.replace('\n','') for i in acceptFile.readlines()]
+    with open(config['rejectFile']) as rejectFile:
+        rejects = [i.replace('\n','') for i in rejectFile.readlines()]
+
     config = {
+        "accepts" : accepts,
+        "rejects" : rejects,
         "steps" : steps,
         "operations" : operations
     }

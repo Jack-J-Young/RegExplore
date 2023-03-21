@@ -1,6 +1,6 @@
 {
-    "acceptFile" : "",
-    "rejectFile" : "",
+    "acceptFile" : "./inputs/internationalPhoneNo.txt",
+    "rejectFile" : "./inputs/emptyReject.txt",
     "steps" : [
         {
             "name" : "minWrapQuant",
