@@ -232,40 +232,43 @@ def userCreativeTransform(config):
     acceptStrings = config['accepts']
     rejectStrings = config['rejects']
     
-    rexpy = tdda.rexpy.Extractor(acceptStrings)
-    rexpy.extract()
-    
     perSolution = 3
     
-    currentRegex = [regexToNode(regexToAst(i[1:-1])) for i in rexpy.results.rex]
-    # currentRegex = [regexToNode(regexToAst(r'a+(?=b)..'))]
+    # currentRegex = [regexToNode(regexToAst(i[1:-1])) for i in rexpy.results.rex]
+    currentRegex = [regexToNode(regexToAst(config['startRegex']))]
     previousRegex = None
     
-    while len(currentRegex) > 0:
+    while True:
         matches = getToolMatches(acceptStrings, rejectStrings, currentRegex, config)
 
         if matches:
             paretoSolutions = getDenseSolutions(acceptStrings, rejectStrings, matches)
         else:
             paretoSolutions = currentRegex
-        paretoScoring = [0 for _ in paretoSolutions]
         
         index = 0
         totalGenerated = []
-        for solution in paretoSolutions:
+        for solutionIndex in range(len(paretoSolutions)):
+            solution = paretoSolutions[solutionIndex]
             regex = nodeToRegex(solution)
-            print(regex)
+            print('[' + str(solutionIndex) + ']: ' + regex)
 
             generatedStrings = genRegexStrings(regex, perSolution)
             totalGenerated += generatedStrings
 
             for genIndex in range(len(generatedStrings)):
-                print('[' + str(index) + ']: ' + repr(generatedStrings[genIndex]))
+                print(repr(generatedStrings[genIndex]))
                 index += 1
         
-        newAcceptsRaw = input("Enter indices: ")
+        print("Enter 'F (index)' to finish with regex")
+        newAcceptsRaw = input("Enter indices (e.g. '0 3 4'): ")
+        indices = []
         if len(newAcceptsRaw) > 0:
             rawList = newAcceptsRaw.split(' ')
+            
+            if rawList[0] == 'F':
+                return paretoSolutions[int(rawList[1])]
+            
             for i in range(len(rawList)):
                 if rawList[i] == '':
                     del rawList[i]
@@ -273,28 +276,19 @@ def userCreativeTransform(config):
             indices = [int(i) for i in rawList]
             acceptStrings = []
             for i in indices:
-                paretoScoring[int(i/perSolution)] += 1
-                acceptStrings.append(totalGenerated[i])
+                acceptStrings += totalGenerated[i*perSolution:(i+1)*perSolution]
             
             indices.sort()
 
             for i in reversed(indices):
-                del totalGenerated[i]
+                del totalGenerated[i*perSolution:(i+1)*perSolution]
 
-        rejectStrings = totalGenerated
-        
-        maxScore = 0
-        for scoreIndex in range(len(paretoScoring)):
-            if paretoScoring[scoreIndex] > maxScore:
-                maxScore = paretoScoring[scoreIndex]
-        
-        if maxScore != 0:
+        rejectStrings += totalGenerated
+
+        if len(indices) > 0:
             currentRegex = []
-            for index in range(len(paretoScoring)):
-                if paretoScoring[index] == maxScore:
-                    currentRegex.append(paretoSolutions[index])
-    
-    return currentRegex
+            for i in indices:
+                currentRegex.append(paretoSolutions[i])
 
 def userParetoSolve(acceptStrings, rejectStrings, regex, config):
     

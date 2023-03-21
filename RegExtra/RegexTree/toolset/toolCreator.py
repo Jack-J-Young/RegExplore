@@ -56,6 +56,7 @@ def loadConfig(path = './configs/default.json'):
         rejects = [i.replace('\n','') for i in rejectFile.readlines()]
 
     config = {
+        "startRegex" : config['startRegex'],
         "accepts" : accepts,
         "rejects" : rejects,
         "steps" : steps,

@@ -1,5 +1,4 @@
 import sre_parse
-from anytree import Node, RenderTree
 
 def regexToAst(regex):
     parse = sre_parse.parse(regex)

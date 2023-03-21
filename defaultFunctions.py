@@ -1,6 +1,7 @@
 import copy
 import random
 from RegExtra.RegexTree.PatternNode.PatternEnums import CategoryType, PatternType
+from RegExtra.RegexTree.PatternNode.createPatternNode import escapeChars
 from RegExtra.RegexTree.PatternNode.patternHelpers import categoryToRegex, categoryToSet
 from RegExtra.RegexTree.QuantNode.QuantEnums import QuantSpecials
 from RegExtra.RegexTree.nodeEnums import ListType, NodeType
@@ -35,7 +36,7 @@ def replaceMinWrap(properties):
                 newNode['value'] = {
                     'type' : PatternType.LITERAL,
                     'value' : ord(min(charSet)),
-                    'regex' : f'{min(charSet)}'
+                    'regex' : escapeChars(ord(min(charSet)))
                 }
             else:
                 newNode['value'] = {
@@ -72,6 +73,7 @@ def randomQuantChangeI(properties):
     
     return output
     
+
 def randomQuantChangeP(properties):
     output = []
     
