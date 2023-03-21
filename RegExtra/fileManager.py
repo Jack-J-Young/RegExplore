@@ -13,7 +13,7 @@ def compressBytes(bytes, level=2):
 def genRegexStrings(regex, size):
     output = []
     for i in range(size):
-        output.append(rs.xeger(regex))
+        output.append(rs.xeger(f'^{regex}$'))
     return output
 
 def getListCompressibility(stringList):

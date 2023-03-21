@@ -1,8 +1,9 @@
 import copy
+import random
 from RegExtra.RegexTree.PatternNode.PatternEnums import CategoryType, PatternType
 from RegExtra.RegexTree.PatternNode.patternHelpers import categoryToRegex, categoryToSet
 from RegExtra.RegexTree.QuantNode.QuantEnums import QuantSpecials
-from RegExtra.RegexTree.nodeEnums import NodeType
+from RegExtra.RegexTree.nodeEnums import ListType, NodeType
 from RegExtra.RegexTree.regexTree import nodeEqual
 
 def replaceMinWrap(properties):
@@ -45,6 +46,58 @@ def replaceMinWrap(properties):
         if newNode['value']['regex'] != '':
             return [newNode]
         return []
+
+def randomQuantChangeI(properties):
+    output = []
+    
+    newNode = copy.deepcopy(properties['currentNode'])
+    newNode['value']['lower'] = max(0, newNode['value']['lower'] - 1)
+    output.append(newNode)
+    
+    newNode = copy.deepcopy(properties['currentNode'])
+    if newNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
+        newNode['value']['lower'] = newNode['value']['lower'] + 1
+    else:
+        newNode['value']['lower'] = min(newNode['value']['lower'] + 1, newNode['value']['upper'])
+    output.append(newNode)
+    
+    if newNode['value']['upper'] != QuantSpecials.MAX_REPEAT:
+        newNode = copy.deepcopy(properties['currentNode'])
+        newNode['value']['upper'] = max(newNode['value']['upper'] - 1, newNode['value']['lower'], 1)
+        output.append(newNode)
+        
+        newNode = copy.deepcopy(properties['currentNode'])
+        newNode['value']['upper'] = newNode['value']['upper'] + 1
+        output.append(newNode)
+    
+    return output
+    
+def randomQuantChangeP(properties):
+    output = []
+    
+    randomPercent = random.random()
+    
+    newNode = copy.deepcopy(properties['currentNode'])
+    newNode['value']['lower'] = max(0, int(newNode['value']['lower']*randomPercent))
+    output.append(newNode)
+    
+    newNode = copy.deepcopy(properties['currentNode'])
+    if newNode['value']['upper'] == QuantSpecials.MAX_REPEAT:
+        newNode['value']['lower'] = newNode['value']['lower'] + int(newNode['value']['lower']*randomPercent)
+    else:
+        newNode['value']['lower'] = min(newNode['value']['lower'] + int(newNode['value']['lower']*randomPercent), newNode['value']['upper'])
+    output.append(newNode)
+    
+    if newNode['value']['upper'] != QuantSpecials.MAX_REPEAT:
+        newNode = copy.deepcopy(properties['currentNode'])
+        newNode['value']['upper'] = max(int(newNode['value']['upper']*randomPercent), newNode['value']['lower'], 1)
+        output.append(newNode)
+        
+        newNode = copy.deepcopy(properties['currentNode'])
+        newNode['value']['upper'] = newNode['value']['upper'] + int(newNode['value']['upper']*randomPercent)
+        output.append(newNode)
+    
+    return output
 
 def inchWrapPattern(properties):
     
@@ -150,6 +203,61 @@ def setCategoryPattern(properties):
             output.append(newNode)
 
     return output
+
+def charsToOr(properties):
+    if properties['currentNode']['value']['type'] == PatternType.RANGE:
+        oldNode = copy.deepcopy(properties['currentNode'])
+        
+        acceptSet = range(oldNode['value']['value'][0], oldNode['value']['value'][1] + 1)
+        # acceptSet = [i['string'] for i in properties['currentNode']]
+        
+        # acceptSet = list(dict.fromkeys(acceptSet))
+        
+        # acceptSet = sorted(acceptSet)
+        
+        setNodes = [{
+            'type' : NodeType.QUANT,
+            'value' : {
+                'upper' : 1,
+                'lower' : 1,
+                'child' : {
+                    'type' : NodeType.PATTERN,
+                    'value' : {
+                        'type' : PatternType.LITERAL,
+                        'value' : i,
+                        'regex' : chr(i)
+                    },
+                    'parent' : None,
+                    'path' : ['value', 'child']
+                }
+            },
+            'parent' : None,
+            'path' : ['value', 'children']
+        } for i in acceptSet]
+        
+        output = {
+            'type' : NodeType.LIST,
+            'value' : {
+                'type' : ListType.OR,
+                'children' : setNodes
+            },
+            'parent' : oldNode['parent'],
+            'path' : oldNode['path']
+        }
+        
+        for nodeIndex in range(len(setNodes)):
+            setNodes[nodeIndex]['parent'] = output
+            setNodes[nodeIndex]['path'] = setNodes[nodeIndex]['path'] + [nodeIndex]
+            setNodes[nodeIndex]['value']['child']['parent'] = setNodes[nodeIndex]
+        
+        parent = oldNode['parent']
+        for p in oldNode['path'][:-1]:
+            parent = oldNode['parent'][p]
+        
+        parent[oldNode['path'][-1]] = output
+        
+        return [output]
+    return []
 
 def bruteDelete(properties):
     if len(properties['currentNode']['value']) > 1:

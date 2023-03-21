@@ -235,16 +235,16 @@ def userCreativeTransform(acceptStrings, rejectStrings, config):
     perSolution = 3
     
     currentRegex = [regexToNode(regexToAst(i[1:-1])) for i in rexpy.results.rex]
+    # currentRegex = [regexToNode(regexToAst(r'a+(?=b)..'))]
     previousRegex = None
     
     while len(currentRegex) > 0:
         matches = getToolMatches(acceptStrings, rejectStrings, currentRegex, config)
 
-        if not matches:
-            for r in currentRegex:
-                print(nodeToRegex(r))
-                
-        paretoSolutions = getDenseSolutions(acceptStrings, rejectStrings, matches)
+        if matches:
+            paretoSolutions = getDenseSolutions(acceptStrings, rejectStrings, matches)
+        else:
+            paretoSolutions = currentRegex
         paretoScoring = [0 for _ in paretoSolutions]
         
         index = 0

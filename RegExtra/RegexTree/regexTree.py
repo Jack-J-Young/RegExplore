@@ -5,7 +5,7 @@ from RegExtra.RegexTree.PatternNode.createPatternNode import createPatternNode, 
 from RegExtra.RegexTree.PatternNode.PatternEnums import CategoryType, PatternType
 from RegExtra.RegexTree.QuantNode.QuantEnums import QuantSpecials
 from RegExtra.RegexTree.QuantNode.createQuantNode import createQuantNode
-from RegExtra.RegexTree.nodeEnums import ListType, NodeType
+from RegExtra.RegexTree.nodeEnums import AssertType, ListType, NodeType
 from RegExtra.solveHelpers import getOrderedPerms
 import json
 
@@ -44,7 +44,7 @@ def regexToNode(rawData, parent = None, path = []):
                 node['path'] = path
             else:
                 for childIndex in range(len(node['value']['children'])):
-                    if node['value']['children'][childIndex]['type'] != NodeType.QUANT:
+                    if not node['value']['children'][childIndex]['type'] in {NodeType.QUANT, NodeType.ASSERT}:
                         node['value']['children'][childIndex] = {
                             'type': NodeType.QUANT,
                             'value' : {
@@ -88,7 +88,7 @@ def regexToNode(rawData, parent = None, path = []):
                 node['path'] = path
             else:
                 for childIndex in range(len(node['value']['children'])):
-                    if node['value']['children'][childIndex]['type'] != NodeType.QUANT:
+                    if not node['value']['children'][childIndex]['type'] in {NodeType.QUANT, NodeType.ASSERT}:
                         node['value']['children'][childIndex] = {
                             'type': NodeType.QUANT,
                             'value' : {
@@ -132,7 +132,7 @@ def regexToNode(rawData, parent = None, path = []):
                 node['path'] = path
             else:
                 for childIndex in range(len(node['value']['children'])):
-                    if node['value']['children'][childIndex]['type'] != NodeType.QUANT:
+                    if not node['value']['children'][childIndex]['type'] in {NodeType.QUANT, NodeType.ASSERT}:
                         node['value']['children'][childIndex] = {
                             'type': NodeType.QUANT,
                             'value' : {
@@ -146,36 +146,6 @@ def regexToNode(rawData, parent = None, path = []):
                         
                         node['value']['children'][childIndex]['value']['child']['parent'] = node['value']['children'][childIndex]
                         node['value']['children'][childIndex]['value']['child']['path'] = ['value', 'child']
-            # if len(rawData[1]) > 1:
-            #     node = {
-            #         'type' : NodeType.LIST,
-            #         'value' : {
-            #             'type' : ListType.OR,
-            #             'children' : None
-            #         },
-            #         'parent' : parent,
-            #         'path' : path
-            #     }
-                
-            #     node['value']['children'] = [regexToNode(rawData[1][subDataIndex], node, ['value', 'children', subDataIndex]) for subDataIndex in range(len(rawData[1]))]
-            
-            #     for childIndex in range(len(node['value']['children'])):
-            #         if node['value']['children'][childIndex]['type'] != NodeType.QUANT:
-            #             node['value']['children'][childIndex] = {
-            #                 'type': NodeType.QUANT,
-            #                 'value' : {
-            #                     'lower' : 1,
-            #                     'upper' : 1,
-            #                     'child' : node['value']['children'][childIndex]
-            #                 },
-            #                 'parent' : node,
-            #                 'path' : node['value']['children'][childIndex]['path']
-            #             }
-                        
-            #             node['value']['children'][childIndex]['value']['child']['parent'] = node['value']['children'][childIndex]
-            #             node['value']['children'][childIndex]['value']['child']['path'] = ['value', 'child']
-            # else:
-            #     node = regexToNode(rawData[1][0], parent, path)
         if rawData[0] == sre_parse.CATEGORY:
             node['type'] = NodeType.PATTERN
             
@@ -206,6 +176,20 @@ def regexToNode(rawData, parent = None, path = []):
                 'type' : PatternType.CATEGORY,
                 'value' : CategoryType.ANY,
                 'regex' : '.'
+            }
+        elif rawData[0] == sre_parse.ASSERT:
+            # 1 = ahead -1 = behind
+            node['type'] = NodeType.ASSERT
+            node['value'] = {
+                'type' : AssertType.LOOK_AHEAD if rawData[1][0] == 1 else AssertType.LOOK_BEHIND,
+                'child' : regexToNode(rawData[1][1], node, ['value', 'child'])
+            }
+        elif rawData[0] == sre_parse.ASSERT_NOT:
+            # 1 = ahead -1 = behind
+            node['type'] = NodeType.ASSERT
+            node['value'] = {
+                'type' : AssertType.LOOK_AHEAD_NOT if rawData[1][0] == 1 else AssertType.LOOK_BEHIND_NOT,
+                'child' : regexToNode(rawData[1][1], node, ['value', 'child'])
             }
 
     return node
@@ -249,6 +233,16 @@ def nodeToRegex(parentNode):
             return nodeToRegex(parentNode['value']['child']) + '{' + str(parentNode['value']['lower']) + ',' + str(parentNode['value']['upper']) + '}'
     elif parentNode['type'] == NodeType.PATTERN:
         return parentNode['value']['regex']
+    elif parentNode['type'] == NodeType.ASSERT:
+        match parentNode['value']['type']:
+            case AssertType.LOOK_AHEAD:
+                return f"(?={nodeToRegex(parentNode['value']['child'])})"
+            case AssertType.LOOK_AHEAD_NOT:
+                return f"(?!{nodeToRegex(parentNode['value']['child'])})"
+            case AssertType.LOOK_BEHIND:
+                return f"(?<={nodeToRegex(parentNode['value']['child'])})"
+            case AssertType.LOOK_BEHIND_NOT:
+                return f"(?<!{nodeToRegex(parentNode['value']['child'])})"
     return ''
 
 # Check if string matches a regex
@@ -278,40 +272,39 @@ def getMatchData(parentNode, string, pastPos = 0, preCalc = []):
         #     'node' : parentNode
         # }
         if parentNode['value']['type'] == ListType.NORMAL:
-            firstMatch = getMatchData(parentNode['value']['children'][0], string, pastPos, preCalc)
-            if firstMatch:
-                currentMatches = [[i] for i in firstMatch]
-            else:
-                return None
+            currentMatches = []
             
-            for child in parentNode['value']['children'][1:]:
+            for childIndex in range(len(parentNode['value']['children'])):
+                child = parentNode['value']['children'][childIndex]
+                
                 nextMatches = []
                 
-                if parentNode['parent'] == None:
-                    print(0)
-                
-                for matchListIndex in reversed(range(len(currentMatches))):
-                    changed = False
-                    matchList = currentMatches[matchListIndex]
-                    
-                    match = matchList[-1]
-                    matchData = getMatchData(child, string, match['endPos'], preCalc)
-                    if parentNode['parent'] == None:
-                        print(0)
-                    if matchData:
-                        for i in range(len(matchData)):
-                            mdat = matchData[i]
-                            if mdat:
-                                changed = True
-                                matchList.append(mdat)
-                            else:
-                                print(0)
-                    
-                    if not changed:
-                        del currentMatches[matchListIndex]
-                    # nextMatches += [[match + i] for i in getMatchData(child, string, match['endPos'], preCalc)]
-                    
-                # currentMatches = nextMatches
+                if child['type'] == NodeType.QUANT:
+                    if childIndex == 0:
+                        matchData = getMatchData(parentNode['value']['children'][0], string, pastPos, preCalc)
+                        if matchData:
+                            currentMatches = [[i] for i in matchData]
+                        else:
+                            return None
+                    else:
+                        for matchListIndex in reversed(range(len(currentMatches))):
+                            changed = False
+                            matchList = currentMatches[matchListIndex]
+                            
+                            match = matchList[-1]
+                            matchData = getMatchData(child, string, match['endPos'], preCalc)
+                            if matchData:
+                                for i in range(len(matchData)):
+                                    mdat = matchData[i]
+                                    if mdat:
+                                        nextMatches.append(matchList + [mdat])
+                                        # matchList.append(mdat)
+                                    else:
+                                        print(0)
+                            
+                        currentMatches = nextMatches
+                elif child['type'] == NodeType.ASSERT:
+                    noop = 1
             
             if parentNode['parent'] == None:
                 for i in reversed(range(len(currentMatches))):
@@ -325,6 +318,11 @@ def getMatchData(parentNode, string, pastPos = 0, preCalc = []):
                 'endPos' : i[-1]['endPos'],
                 'string' : ''.join([n['string'] for n in i])
             } for i in currentMatches]
+            
+            # Check asserts
+            for nodeIndex in reversed(range(len(output))):
+                if not re.match(f'\A{nodeToRegex(parentNode)}', output[nodeIndex]['string']):
+                    del output[nodeIndex]
             
             preCalc.append((string[pastPos:], preCalcName, output))
             
@@ -418,6 +416,9 @@ def getMatchData(parentNode, string, pastPos = 0, preCalc = []):
                 return nodes
         return None
 
+    # elif parentNode['type'] == NodeType.ASSERT:
+    #     return 0
+    
     # Get all matches for current node
     elif parentNode['type'] == NodeType.PATTERN:
         cutString = string[pastPos:]

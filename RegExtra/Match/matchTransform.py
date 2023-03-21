@@ -55,7 +55,6 @@ def replaceStep(nodeCollections, replaceFunction):
                     newNode['value']['child']['modified'] = True
                 case NodeType.PATTERN:
                     newNode['parent']['modified'] = True
-            newNode['modified']
             root = newNode
             while root['parent'] != None:
                 root = root['parent']

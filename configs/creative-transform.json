@@ -1,4 +1,6 @@
 {
+    "acceptFile" : "",
+    "rejectFile" : "",
     "steps" : [
         {
             "name" : "minWrapQuant",
@@ -55,9 +57,42 @@
             "functionName" : "repeatInsert",
             "module" : "defaultFunctions",
             "inputTypes" : ["list"]
+        },
+        {
+            "name" : "charsToOr",
+            "type" : "replace",
+            "functionName" : "charsToOr",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["pattern"]
+        },
+        {
+            "name" : "randomQuantChangeI",
+            "type" : "replace",
+            "functionName" : "randomQuantChangeI",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["quant"]
+        },
+        {
+            "name" : "randomQuantChangeP",
+            "type" : "replace",
+            "functionName" : "randomQuantChangeP",
+            "module" : "defaultFunctions",
+            "inputTypes" : ["quant"]
         }
     ],
     "operations" : [
+        {
+            "name" : "randomQuantChangeI",
+            "steps" : [
+                "randomQuantChangeI"
+            ]
+        },
+        {
+            "name" : "randomQuantChangeP",
+            "steps" : [
+                "randomQuantChangeP"
+            ]
+        },
         {
             "name" : "bruteDelete",
             "steps" : [
