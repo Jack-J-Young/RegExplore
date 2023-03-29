@@ -1,6 +1,6 @@
 {
-    "startRegex" : "\\+[0-9]{1,3} [0-9]{1,8} [0-9]{1,8}",
-    "acceptFile" : "./inputs/internationalPhoneNo.txt",
+    "startRegex" : "\\d+-[A-Z]+-\\d+",
+    "acceptFile" : "./inputs/licenseplate.txt",
     "rejectFile" : "./inputs/emptyReject.txt",
     "steps" : [
         {
@@ -90,6 +90,12 @@
             ]
         },
         {
+            "name" : "minWrapQuant",
+            "steps" : [
+                "minWrapQuant"
+            ]
+        },
+        {
             "name" : "inchCategoryPattern",
             "steps" : [
                 "inchCategoryPattern",
@@ -119,6 +125,16 @@
             "name" : "repeatInsert",
             "steps" : [
                 "repeatInsert"
+            ]
+        },
+        {
+            "name" : "repeatDelete",
+            "steps" : [
+                "repeatInsert",
+                "inchCategoryPattern",
+                "minWrapQuant",
+                "bruteDelete",
+                "inchCategoryPattern"
             ]
         }
     ]

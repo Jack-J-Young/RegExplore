@@ -1,15 +1,14 @@
-import copy
 import oapackage
 from RegExtra.Match.matchTransform import deleteStep, getNodeCollections, insertStep, replaceStep
 from RegExtra.RegexTree.nodeEnums import ListType, NodeType
 from RegExtra.RegexTree.regexTree import matchArray, nodeToRegex, regexToNode, simplifyRegexTree
 from RegExtra.RegexTree.toolset.toolCreator import StepType
 import re
-import tdda.rexpy
 
 from RegExtra.fileManager import genRegexStrings, getDensityScoreFromReference, getListCompressibility, getRegexCompressibility
 from RegExtra.regexParse import regexToAst
 
+# Removes modified tags on regex tree
 def removeModified(node):
     output = []
     currentNodes = [node]
@@ -28,6 +27,7 @@ def removeModified(node):
             
     return output
 
+# Checks parent and path nodes of regex trees
 def checkValidity(node):
     currentNodes = [node]
     nextNodes = []
@@ -47,7 +47,8 @@ def checkValidity(node):
                     print('INVALID TREE')
         currentNodes = nextNodes
         nextNodes = []
-            
+
+# Returns all transformations of a given regex and config
 def getToolMatches(acceptSet, rejectSet, regexList, config):
     preCalc = []
     
@@ -134,6 +135,7 @@ def getToolMatches(acceptSet, rejectSet, regexList, config):
 
     return solutions
 
+# Returns pareto optimal regex given a list of regex
 def getOptimalSolutions(acceptStrings, rejectStrings, matches):
     acceptDensity = getListCompressibility(acceptStrings)
     print("accDens: " + str(acceptDensity))
@@ -175,6 +177,7 @@ def getOptimalSolutions(acceptStrings, rejectStrings, matches):
 
     return output
 
+# Returns pareto optimal solutions given a list of regex
 def getDenseSolutions(acceptStrings, rejectStrings, matches):
     scores = []
     for tree in matches:
@@ -210,6 +213,7 @@ def getDenseSolutions(acceptStrings, rejectStrings, matches):
 
     return output
 
+# Returns a transformed regex given regex
 def firstParetoSolve(acceptStrings, rejectStrings, regex, config):
     currentRegex = regex
     previousRegex = None
@@ -228,6 +232,7 @@ def firstParetoSolve(acceptStrings, rejectStrings, regex, config):
     
     return currentRegex
 
+# takes in config and returns transformed regex, uses user input
 def userCreativeTransform(config):
     acceptStrings = config['accepts']
     rejectStrings = config['rejects']
@@ -274,9 +279,10 @@ def userCreativeTransform(config):
                     del rawList[i]
 
             indices = [int(i) for i in rawList]
-            acceptStrings = []
-            for i in indices:
-                acceptStrings += totalGenerated[i*perSolution:(i+1)*perSolution]
+            # Un comment for mutations
+            # acceptStrings = []
+            # for i in indices:
+            #     acceptStrings += totalGenerated[i*perSolution:(i+1)*perSolution]
             
             indices.sort()
 

@@ -1,4 +1,3 @@
-import bz2, os
 import zlib
 from random import SystemRandom
 
@@ -7,14 +6,14 @@ from rstr import Rstr
 compressionLevel = 9
 rs = Rstr(SystemRandom())
 
-def compressBytes(bytes, level=2):
-    return zlib.compress(bytes, level=level)
-
 def genRegexStrings(regex, size):
     output = []
     for i in range(size):
         output.append(rs.xeger(f'^{regex}$'))
     return output
+
+def compressBytes(bytes, level=2):
+    return zlib.compress(bytes, level=level)
 
 def getListCompressibility(stringList):
     aggregate = ""
