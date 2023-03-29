@@ -1,4 +1,3 @@
-import copy
 import sre_parse
 import re
 from RegExtra.RegexTree.PatternNode.createPatternNode import createPatternNode, escapeChars
@@ -7,7 +6,6 @@ from RegExtra.RegexTree.QuantNode.QuantEnums import QuantSpecials
 from RegExtra.RegexTree.QuantNode.createQuantNode import createQuantNode
 from RegExtra.RegexTree.nodeEnums import AssertType, ListType, NodeType
 from RegExtra.solveHelpers import getOrderedPerms
-import json
 
 # Turns ast into regex tree object
 def regexToNode(rawData, parent = None, path = []): 
